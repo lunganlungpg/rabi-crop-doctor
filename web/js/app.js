@@ -664,6 +664,11 @@
       navigator.serviceWorker.register("./sw.js").catch(() => {});
     }
 
+    const apkDl = document.getElementById("btn-apk-dl");
+    if (apkDl && (window.AndroidBridge || location.protocol === "file:")) {
+      apkDl.classList.add("hidden");
+    }
+
     applyLanguage();
     // Auto-load Wheat Yellow Rust sample so first open demonstrates capability immediately!
     const samples = getBundle().samples;

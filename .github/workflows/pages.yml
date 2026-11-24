@@ -1,0 +1,52 @@
+# Deploys the bilingual offline-capable Rabi Crop Doctor web app,
+# interactive Plotly dashboards, and direct APK download to GitHub Pages.
+name: Deploy Rabi Crop Doctor to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["web/**", "plots/**", "RabiCropDoctor.apk", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stage static site bundle
+        run: |
+          rm -rf _site
+          cp -r web _site
+          mkdir -p _site/plots
+          cp plots/*.html _site/plots/ || true
+          cp RabiCropDoctor.apk _site/RabiCropDoctor.apk
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "_site"
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,25 @@
+# Publishes a GitHub Release with RabiCropDoctor.apk attached when a v* tag is pushed.
+name: Publish Android APK Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish Release with RabiCropDoctor.apk
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            RabiCropDoctor.apk
+          generate_release_notes: true
+          name: "Rabi Crop Doctor ${{ github.ref_name }} — Offline ML + ANN Farmer APK"
