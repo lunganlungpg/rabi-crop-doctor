@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rabi-crop-doctor"
-version = "1.0.0"
+version = "1.0.1"
 description = "Offline ML & ANN crop disease classifier and field incidence tool (Wheat, Mustard, Chickpea, Potato) for Indian Rabi farmers."
 readme = "README.md"
 requires-python = ">=3.9"

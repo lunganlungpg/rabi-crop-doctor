@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Live Web App](https://img.shields.io/badge/Live%20Web%20App-GitHub%20Pages-0EA5E9?style=flat&logo=github)](https://lunganlungpg.github.io/rabi-crop-doctor/)
-[![Download Android APK](https://img.shields.io/badge/Android%20APK-v1.0.0%20Offline%20(814KB)-15803D.svg)](https://github.com/lunganlungpg/rabi-crop-doctor/releases/latest)
+[![Download Android APK](https://img.shields.io/badge/Android%20APK-v1.0.1%20Offline%20(814KB)-15803D.svg)](https://github.com/lunganlungpg/rabi-crop-doctor/releases/latest)
 [![Packages Guide](https://img.shields.io/badge/Packages-Python%20%7C%20R%20%7C%20npm%20%7C%20Docker-8B5CF6.svg)](PACKAGES.md)
 [![CI Check](https://github.com/lunganlungpg/rabi-crop-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/lunganlungpg/rabi-crop-doctor/actions/workflows/ci.yml)
 [![1-Year Roadmap](https://img.shields.io/badge/Roadmap-2026--2027%20(1%20Year)-0284C7.svg)](ROADMAP.md)
