@@ -5,6 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Live Web App](https://img.shields.io/badge/Live%20Web%20App-GitHub%20Pages-0EA5E9?style=flat&logo=github)](https://lunganlungpg.github.io/rabi-crop-doctor/)
 [![Download Android APK](https://img.shields.io/badge/Android%20APK-v1.0.0%20Offline%20(814KB)-15803D.svg)](https://github.com/lunganlungpg/rabi-crop-doctor/releases/latest)
+[![Packages Guide](https://img.shields.io/badge/Packages-Python%20%7C%20R%20%7C%20npm%20%7C%20Docker-8B5CF6.svg)](PACKAGES.md)
 [![CI Check](https://github.com/lunganlungpg/rabi-crop-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/lunganlungpg/rabi-crop-doctor/actions/workflows/ci.yml)
 [![1-Year Roadmap](https://img.shields.io/badge/Roadmap-2026--2027%20(1%20Year)-0284C7.svg)](ROADMAP.md)
 [![Co-Contributors Welcome](https://img.shields.io/badge/PRs%20%26%20Co--Contributors-Welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -82,9 +83,14 @@ Regional disease incidence (%) and Wheeler PDI metrics across major Rabi-produci
 ```text
 rabi_crop_doctor/
 ├── RabiCropDoctor.apk                 # Ready-to-install signed offline Android APK (API 21–35)
+├── PACKAGES.md                        # Access & install guide for Python, R, npm, Docker & APK
+├── pyproject.toml                     # Installable Python package (rabi-crop-doctor + rabi-doctor CLI)
+├── package.json & index.js            # @lunganlungpg/rabi-crop-doctor npm/Node offline package
+├── Dockerfile                         # Container image published to ghcr.io GitHub Packages
 ├── ROADMAP.md                         # 1-year stress-free collaborative roadmap (Nov 2026 – Nov 2027)
 ├── CONTRIBUTING.md                    # Friendly co-contributor guide, parity checklist & co-author format
-├── .github/                           # GitHub Actions CI parity checks, PR & Issue templates
+├── .github/                           # GitHub Actions CI, Pages, Release & Packages workflows
+├── R-package/                         # Installable base-R epidemiological companion (rabidoctor)
 ├── build_apk.py                       # Builds APK from scratch (AAPT2 + Javac + D8 + apksigner)
 ├── verify_apk.py                      # Validates manifest, offline assets, and APK signatures
 ├── python/
@@ -107,7 +113,21 @@ rabi_crop_doctor/
 
 ---
 
-## 🚀 Quickstart & Reproducibility
+## 🚀 Quickstart & Packages (`Python · R · Node.js · Android APK`)
+
+Full install guides, container details, and dependency tables live in [**`PACKAGES.md`**](PACKAGES.md):
+
+- **🐍 Python Package (`rabi_crop_doctor`):**
+  ```bash
+  pip install "git+https://github.com/lunganlungpg/rabi-crop-doctor.git"
+  rabi-doctor dataset_samples/wheat_yellow_rust_sample_1.png --crop wheat
+  ```
+- **📊 R Companion Package (`rabidoctor`, zero external CRAN dependencies):**
+  ```r
+  remotes::install_github("lunganlungpg/rabi-crop-doctor", subdir = "R-package")
+  ```
+- **🟨 Node.js / Browser Inference (`@lunganlungpg/rabi-crop-doctor`):**
+  Exported cleanly via [`package.json`](package.json) & [`index.js`](index.js) and published to GitHub Packages alongside our container [`Dockerfile`](Dockerfile).
 
 ### 1. Retrain ML & ANN Models (or Fine-Tune on Real Leaf Folders)
 ```bash

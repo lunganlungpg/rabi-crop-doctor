@@ -19,7 +19,10 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 
-from feature_extractor import FEATURE_NAMES, extract_features_and_diagnostics
+try:
+    from .feature_extractor import FEATURE_NAMES, extract_features_and_diagnostics
+except ImportError:
+    from feature_extractor import FEATURE_NAMES, extract_features_and_diagnostics
 
 CLASSES = [
     "wheat_healthy",

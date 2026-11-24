@@ -1,0 +1,39 @@
+{
+  "name": "@lunganlungpg/rabi-crop-doctor",
+  "version": "1.0.0",
+  "description": "Zero-dependency offline plant pathology image feature extractor and ML/ANN classifier bundle for Indian Rabi crops (Wheat, Mustard, Chickpea, Potato).",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "web/js/feature_extractor.js",
+    "web/js/inference_engine.js",
+    "models/android_models.json",
+    "data/rabi_crops_knowledge.json",
+    "data/rabi_field_incidence_india.csv",
+    "README.md",
+    "PACKAGES.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node -e \"const pkg = require('./index.js'); console.log('Classes:', pkg.getClasses().length, 'Features:', pkg.FEATURE_NAMES.length)\"",
+    "check": "node --check index.js && node --check web/js/feature_extractor.js && node --check web/js/inference_engine.js && node --check web/js/app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lunganlungpg/rabi-crop-doctor.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "keywords": [
+    "agriculture",
+    "rabi-crops",
+    "plant-pathology",
+    "machine-learning",
+    "neural-network",
+    "offline-ai",
+    "india"
+  ],
+  "author": "Lunganlung P. G. <227372907+lunganlungpg@users.noreply.github.com>",
+  "license": "MIT"
+}

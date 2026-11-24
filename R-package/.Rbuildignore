@@ -1,0 +1,4 @@
+# Keep R package builds clean and focused
+^\.Rproj\.user$
+^.*\.Rcheck$
+^.*\.tar\.gz$

@@ -34,8 +34,12 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import LabelEncoder, StandardScaler, label_binarize
 from sklearn.svm import SVC
 
-from feature_extractor import FEATURE_NAMES, extract_features_and_diagnostics
-from generate_rabi_dataset import CLASSES
+try:
+    from .feature_extractor import FEATURE_NAMES, extract_features_and_diagnostics
+    from .generate_rabi_dataset import CLASSES
+except ImportError:
+    from feature_extractor import FEATURE_NAMES, extract_features_and_diagnostics
+    from generate_rabi_dataset import CLASSES
 
 
 def _serialize_tree(tree) -> Dict[str, Any]:

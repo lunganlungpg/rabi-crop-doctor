@@ -1,4 +1,4 @@
-name: CI — Parity, Models & Assets Check
+name: CI — Parity, Models & Multi-Language Package Checks
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  verify-pipeline:
+  verify-python-and-node:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,24 +24,34 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install Python dependencies
+      - name: Install Python dependencies & package editable
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install --no-deps .
 
-      - name: Validate agronomic JSON & surveillance CSV
+      - name: Validate agronomic JSON, incidence script & package CLI fallback
         run: |
           python -c "import json; json.load(open('data/rabi_crops_knowledge.json', encoding='utf-8'))"
           python python/disease_incidence.py
+          rabi-doctor dataset_samples/wheat_yellow_rust_sample_1.png --crop wheat
 
-      - name: Verify JavaScript syntax
+      - name: Verify JavaScript & npm package exports
+        run: npm run check && npm test
+
+      - name: Reproduce ML/ANN training & run Python <-> JS parity suite
         run: |
-          node --check web/js/feature_extractor.js
-          node --check web/js/inference_engine.js
-          node --check web/js/app.js
+          python python/train_and_evaluate.py
+          python tests/test_parity_and_pipeline.py
 
-      - name: Reproduce ML/ANN training from feature dataset
-        run: python python/train_and_evaluate.py
-
-      - name: Run Python <-> JS feature parity & epidemiology test suite
-        run: python tests/test_parity_and_pipeline.py
+  verify-r-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - name: Install rabidoctor R package and run tests
+        run: |
+          R CMD INSTALL R-package
+          Rscript R-package/tests/run_tests.R

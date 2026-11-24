@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rabi-crop-doctor"
+version = "1.0.0"
+description = "Offline ML & ANN crop disease classifier and field incidence tool (Wheat, Mustard, Chickpea, Potato) for Indian Rabi farmers."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+  { name = "Lunganlung P. G.", email = "227372907+lunganlungpg@users.noreply.github.com" }
+]
+maintainers = [
+  { name = "Lunganlung P. G.", email = "227372907+lunganlungpg@users.noreply.github.com" }
+]
+keywords = [
+  "agriculture",
+  "rabi-crops",
+  "plant-pathology",
+  "disease-incidence",
+  "machine-learning",
+  "artificial-neural-network",
+  "india",
+  "android-apk"
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Image Recognition"
+]
+dependencies = [
+  "numpy>=1.26.0",
+  "pandas>=2.1.0",
+  "scipy>=1.11.0",
+  "scikit-learn>=1.4.0",
+  "pillow>=10.0.0"
+]
+
+[project.optional-dependencies]
+plots = ["matplotlib>=3.8.0", "plotly>=5.18.0"]
+dev = ["pytest>=7.4.0"]
+all = ["matplotlib>=3.8.0", "plotly>=5.18.0", "pytest>=7.4.0"]
+
+[project.urls]
+Homepage = "https://lunganlungpg.github.io/rabi-crop-doctor/"
+Repository = "https://github.com/lunganlungpg/rabi-crop-doctor"
+Issues = "https://github.com/lunganlungpg/rabi-crop-doctor/issues"
+Roadmap = "https://github.com/lunganlungpg/rabi-crop-doctor/blob/main/ROADMAP.md"
+
+[project.scripts]
+rabi-doctor = "rabi_crop_doctor.predict_image:cli_main"
+
+[tool.setuptools]
+package-dir = { "rabi_crop_doctor" = "python" }
+packages = ["rabi_crop_doctor"]
+
+[tool.setuptools.data-files]
+"share/rabi_crop_doctor/data" = [
+  "data/rabi_crops_knowledge.json",
+  "data/rabi_field_incidence_india.csv",
+  "data/dataset_summary.json"
+]
+"share/rabi_crop_doctor/models" = [
+  "models/android_models.json",
+  "models/evaluation_metrics.json"
+]

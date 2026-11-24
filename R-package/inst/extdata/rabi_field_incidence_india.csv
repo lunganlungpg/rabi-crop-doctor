@@ -1,0 +1,15 @@
+zone,state,crop,disease,peak_month,mean_temp_c,mean_rh_pct,surveyed_plots,infected_plots,disease_incidence_pct,mean_pdi_pct,etl_status
+North-Western Plains,Punjab,Wheat,Yellow Rust,Jan,13.5,84,120,34,28.3,16.8,Urgent Action
+North-Western Plains,Haryana,Wheat,Yellow Rust,Jan,14.2,81,110,27,24.5,14.2,Watch / Spray Focus
+Western UP & Tarai,Uttar Pradesh,Wheat,Brown Rust,Mar,22.4,68,140,29,20.7,11.4,Moderate Risk
+Eastern Gangetic,Bihar,Wheat,Brown Rust,Mar,24.1,72,95,24,25.3,13.9,Urgent Action
+Arid & Semi-Arid,Rajasthan,Mustard,White Rust,Jan,14.8,77,130,36,27.7,15.6,Urgent Action
+Central Plains,Uttar Pradesh,Mustard,Alternaria Blight,Feb,19.6,85,125,41,32.8,19.4,Urgent Action
+North-Western Plains,Haryana,Mustard,Alternaria Blight,Feb,18.2,79,90,19,21.1,11.8,Watch / Spray Focus
+Malwa & Vindhya,Madhya Pradesh,Chickpea,Fusarium Wilt,Dec,23.5,52,150,44,29.3,22.1,Urgent Action
+Deccan & Marathwada,Maharashtra,Chickpea,Fusarium Wilt,Jan,25.2,48,105,29,27.6,20.5,Urgent Action
+North-Western Plains,Punjab,Chickpea,Ascochyta Blight,Feb,16.4,78,80,14,17.5,9.6,Watch / Spray Focus
+Upper Gangetic,Uttar Pradesh,Potato,Late Blight,Jan,12.8,91,160,62,38.8,26.4,Critical Alert
+Eastern Plains,West Bengal,Potato,Late Blight,Jan,15.1,89,135,48,35.6,24.8,Critical Alert
+Lower Gangetic,Bihar,Potato,Early Blight,Feb,21.8,74,100,23,23.0,12.7,Watch / Spray Focus
+Western Arid,Gujarat,Potato,Early Blight,Feb,23.2,64,85,15,17.6,9.2,Watch / Spray Focus

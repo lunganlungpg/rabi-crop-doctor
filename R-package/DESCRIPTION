@@ -1,0 +1,19 @@
+Package: rabidoctor
+Type: Package
+Title: Rabi Crop Disease Incidence, Severity Grading, and KVK Advisory Toolkit
+Version: 1.0.0
+Authors@R: person("Lunganlung", "P. G.",
+    email = "227372907+lunganlungpg@users.noreply.github.com",
+    role = c("aut", "cre"))
+Description: Base-R companion epidemiological toolkit for the Rabi Crop Doctor
+    project. Computes plot-level Disease Incidence (%), converts foliar lesion
+    percentages to standard 0-5 pathology ratings, calculates Wheeler (1969)
+    Percent Disease Index (PDI), benchmarks agro-climatic Rabi risk across Indian
+    states, and provides bilingual (English/Hindi) ICAR/KVK crop advisories.
+License: MIT + file LICENSE
+Encoding: UTF-8
+URL: https://github.com/lunganlungpg/rabi-crop-doctor
+BugReports: https://github.com/lunganlungpg/rabi-crop-doctor/issues
+Depends: R (>= 4.1.0)
+Imports: stats, utils
+RoxygenNote: 7.3.2

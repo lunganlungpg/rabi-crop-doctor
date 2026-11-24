@@ -13,7 +13,10 @@ import json
 import os
 import pandas as pd
 
-from generate_rabi_dataset import CLASSES
+try:
+    from .generate_rabi_dataset import CLASSES
+except ImportError:
+    from generate_rabi_dataset import CLASSES
 
 
 def build_bundle() -> None:
@@ -82,6 +85,32 @@ def build_bundle() -> None:
 
     kb_size = os.path.getsize(js_out) / 1024.0
     print(f"Built offline JS bundle -> {js_out} ({kb_size:.1f} KB)")
+
+    # Keep R companion package data in inst/extdata synchronized with single source of truth
+    r_extdata = os.path.join(root_dir, "R-package", "inst", "extdata")
+    os.makedirs(r_extdata, exist_ok=True)
+    inc_df.to_csv(os.path.join(r_extdata, "rabi_field_incidence_india.csv"), index=False)
+
+    adv_rows = []
+    for cls in knowledge_json["classes"]:
+        adv_rows.append({
+            "id": cls["id"],
+            "crop": cls["crop"],
+            "is_healthy": cls["is_healthy"],
+            "name_en": cls["name_en"],
+            "name_hi": cls["name_hi"],
+            "pathogen": cls["pathogen"],
+            "etl_pct": cls["etl_pct"],
+            "peak_months": cls["peak_months"],
+            "weather_trigger_en": cls["weather_trigger_en"],
+            "weather_trigger_hi": cls["weather_trigger_hi"],
+            "symptoms_en": cls["symptoms_en"],
+            "symptoms_hi": cls["symptoms_hi"],
+            "action_en": " | ".join(cls["action_en"]),
+            "action_hi": " | ".join(cls["action_hi"]),
+        })
+    pd.DataFrame(adv_rows).to_csv(os.path.join(r_extdata, "rabi_classes_advisory.csv"), index=False)
+    print(f"Synchronized R package CSV assets -> {r_extdata}")
 
 
 if __name__ == "__main__":

@@ -16,7 +16,10 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 
-from generate_rabi_dataset import CLASSES
+try:
+    from .generate_rabi_dataset import CLASSES
+except ImportError:
+    from generate_rabi_dataset import CLASSES
 
 
 SHORT_LABELS = {
