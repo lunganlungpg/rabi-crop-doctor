@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+Thumbs.db
+android_build/build/
+*.idsig
+*.log
+models/*.pkl
+data/raw_images/
+android_build/debug.keystore
+android_build/build/

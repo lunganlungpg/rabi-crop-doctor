@@ -1,0 +1,343 @@
+{
+  "project": "Rabi Crop Doctor (फसल मित्र - रबी)",
+  "version": "1.0.0",
+  "helpline": {
+    "kisan_call_centre": "1800-180-1551",
+    "note_en": "Free advisory tool based on ICAR/KVK Rabi crop guidelines. Always confirm chemical spray dosages with your nearest Krishi Vigyan Kendra (KVK) before application.",
+    "note_hi": "यह ICAR/कृषि विज्ञान केंद्र (KVK) के रबी फसल दिशानिर्देशों पर आधारित निःशुल्क सलाहकार टूल है। किसी भी रासायनिक छिड़काव से पहले अपने नजदीकी KVK या किसान कॉल सेंटर (1800-180-1551) से पुष्टि अवश्य करें।"
+  },
+  "severity_scale_0_to_5": [
+    {"grade": 0, "max_pct": 1.0, "label_en": "Healthy (0%)", "label_hi": "स्वस्थ (0%)", "risk": "safe"},
+    {"grade": 1, "max_pct": 10.0, "label_en": "Trace / Early (1–10%)", "label_hi": "प्रारंभिक (1–10%)", "risk": "watch"},
+    {"grade": 2, "max_pct": 25.0, "label_en": "Low-Moderate (11–25%)", "label_hi": "हल्का संक्रमण (11–25%)", "risk": "moderate"},
+    {"grade": 3, "max_pct": 50.0, "label_en": "Moderate (26–50%)", "label_hi": "मध्यम संक्रमण (26–50%)", "risk": "high"},
+    {"grade": 4, "max_pct": 75.0, "label_en": "Severe (51–75%)", "label_hi": "गंभीर संक्रमण (51–75%)", "risk": "critical"},
+    {"grade": 5, "max_pct": 100.0, "label_en": "Very Severe (>75%)", "label_hi": "अति गंभीर (>75%)", "risk": "critical"}
+  ],
+  "crops": [
+    {
+      "id": "wheat",
+      "name_en": "Wheat",
+      "name_hi": "गेहूँ (Gehun)",
+      "scientific": "Triticum aestivum",
+      "season": "Sowing: Nov | Harvest: Mar–Apr",
+      "major_states": ["Punjab", "Haryana", "Uttar Pradesh", "Madhya Pradesh", "Rajasthan", "Bihar"],
+      "emoji": "🌾"
+    },
+    {
+      "id": "mustard",
+      "name_en": "Mustard",
+      "name_hi": "सरसों (Sarson)",
+      "scientific": "Brassica juncea",
+      "season": "Sowing: Oct–Nov | Harvest: Feb–Mar",
+      "major_states": ["Rajasthan", "Uttar Pradesh", "Haryana", "Madhya Pradesh", "West Bengal"],
+      "emoji": "🌼"
+    },
+    {
+      "id": "chickpea",
+      "name_en": "Chickpea (Gram)",
+      "name_hi": "चना (Chana)",
+      "scientific": "Cicer arietinum",
+      "season": "Sowing: Oct–Nov | Harvest: Feb–Mar",
+      "major_states": ["Madhya Pradesh", "Maharashtra", "Rajasthan", "Uttar Pradesh", "Karnataka"],
+      "emoji": "🫘"
+    },
+    {
+      "id": "potato",
+      "name_en": "Potato",
+      "name_hi": "आलू (Aloo)",
+      "scientific": "Solanum tuberosum",
+      "season": "Sowing: Oct–Nov | Harvest: Jan–Mar",
+      "major_states": ["Uttar Pradesh", "West Bengal", "Bihar", "Gujarat", "Punjab"],
+      "emoji": "🥔"
+    }
+  ],
+  "classes": [
+    {
+      "id": "wheat_healthy",
+      "crop": "wheat",
+      "is_healthy": true,
+      "name_en": "Healthy Wheat",
+      "name_hi": "स्वस्थ गेहूँ",
+      "pathogen": "None (Healthy chlorophyll leaf)",
+      "etl_pct": 0,
+      "peak_months": "Nov–Apr",
+      "weather_trigger_en": "Optimal cool winter (14–22°C), balanced NPK moisture",
+      "weather_trigger_hi": "संतुलित नमी और अनुकूल ठंडा तापमान (14–22°C)",
+      "symptoms_en": "Uniform dark-green leaf blades with crisp parallel venation and no yellow stripes or rust pustules.",
+      "symptoms_hi": "पत्ती पूरी तरह हरी, समानांतर नसें साफ और किसी भी पीली धारी या भूरे धब्बे से मुक्त।",
+      "action_en": [
+        "No chemical spray required — continue routine weekly field scouting.",
+        "Maintain CRI-stage irrigation (21 days after sowing) and balanced urea top-dressing.",
+        "Inspect shaded edges near trees and bunds every 7 days during Jan–Feb."
+      ],
+      "action_hi": [
+        "किसी दवा के छिड़काव की आवश्यकता नहीं है — साप्ताहिक निरीक्षण जारी रखें।",
+        "बुवाई के 21 दिन बाद (CRI अवस्था) सिंचाई और संतुलित यूरिया का ध्यान रखें।",
+        "जनवरी-फरवरी में मेड़ और पेड़ों की छाया वाले किनारों की जांच करते रहें।"
+      ]
+    },
+    {
+      "id": "wheat_yellow_rust",
+      "crop": "wheat",
+      "is_healthy": false,
+      "name_en": "Wheat Yellow (Stripe) Rust",
+      "name_hi": "गेहूँ का पीला रतुआ",
+      "pathogen": "Puccinia striiformis f. sp. tritici",
+      "etl_pct": 10,
+      "peak_months": "Jan–Feb",
+      "weather_trigger_en": "Cool temperatures (10–18°C), morning dew/fog, shaded humid microclimates",
+      "weather_trigger_hi": "ठंडा मौसम (10–18°C), सुबह की ओस/कोहरा और अधिक नमी",
+      "symptoms_en": "Bright yellow-orange powdery pustules arranged in long, narrow parallel stripes along leaf veins; yellow dust stains fingers when touched.",
+      "symptoms_hi": "पत्ती की नसों के समानांतर चमकीली पीली धारियों में पाउडर जैसे दाने; छूने पर उंगली पर पीला रंग लग जाता है।",
+      "action_en": [
+        "URGENT SCOUTING: Mark the initial infection hotspot (focus) immediately before wind spreads spores.",
+        "Avoid excess nitrogen/urea which softens foliage and accelerates rust spread.",
+        "Consult nearest KVK for focal spot-spraying (e.g., Propiconazole 25 EC or Tebuconazole at recommended dose).",
+        "Next season: adopt ICAR resistant cultivars like DBW-187, HD-3226, or PBW-826."
+      ],
+      "action_hi": [
+        "तुरंत खेत के संक्रमित हिस्से (हॉटस्पॉट) को चिन्हित करें ताकि हवा से रोग न फैले।",
+        "यूरिया का अत्यधिक प्रयोग रोकें; अधिक नाइट्रोजन से रोग तेजी से बढ़ता है।",
+        "नजदीकी कृषि विज्ञान केंद्र (KVK) की सलाह से केवल प्रभावित क्षेत्र में अनुशंसित फफूंदनाशी का छिड़काव करें।",
+        "अगली बुवाई में रोगरोधी किस्में (जैसे DBW-187, HD-3226, PBW-826) चुनें।"
+      ]
+    },
+    {
+      "id": "wheat_brown_rust",
+      "crop": "wheat",
+      "is_healthy": false,
+      "name_en": "Wheat Brown (Leaf) Rust",
+      "name_hi": "गेहूँ का भूरा रतुआ",
+      "pathogen": "Puccinia triticina",
+      "etl_pct": 15,
+      "peak_months": "Feb–Mar",
+      "weather_trigger_en": "Warming late-Rabi weather (18–25°C) with light dew or intermittent rain",
+      "weather_trigger_hi": "हल्का गर्म तापमान (18–25°C) और ओस या हल्की बारिश",
+      "symptoms_en": "Scattered round-to-oval reddish-brown or cinnamon powdery pustules randomly spread across the upper leaf surface (not in neat stripes).",
+      "symptoms_hi": "पत्ती की ऊपरी सतह पर बिखरे हुए गोल/अंडाकार भूरे-नारंगी पाउडर जैसे धब्बे (धारियों में नहीं)।",
+      "action_en": [
+        "Walk field in a W-pattern and sample 20 flag/top leaves to measure true plot incidence.",
+        "Ensure adequate Potash (K) nutrition to strengthen leaf cuticle against late rust.",
+        "Timely early-to-mid November sowing protects grain filling from March brown rust surges.",
+        "Consult KVK before chemical control if incidence exceeds 15% prior to dough stage."
+      ],
+      "action_hi": [
+        "खेत में W-आकार में चलकर 20 ऊपरी पत्तियों की जांच कर वास्तविक प्रकोप प्रतिशत निकालें।",
+        "पोटाश खाद का संतुलित उपयोग पत्तियों की रोग प्रतिरोधक क्षमता बढ़ाता है।",
+        "नवंबर के पहले पखवाड़े में समय पर बुवाई करने से दाने भरने से पहले फसल बच जाती है।",
+        "दाने भरने से पहले यदि प्रकोप 15% से अधिक हो, तो KVK की सलाह पर ही उपचार करें।"
+      ]
+    },
+    {
+      "id": "mustard_healthy",
+      "crop": "mustard",
+      "is_healthy": true,
+      "name_en": "Healthy Mustard",
+      "name_hi": "स्वस्थ सरसों",
+      "pathogen": "None (Vigorous Brassica lamina)",
+      "etl_pct": 0,
+      "peak_months": "Oct–Mar",
+      "weather_trigger_en": "Clear cool sunny days (15–24°C) with good airflow between rows",
+      "weather_trigger_hi": "साफ धूप और ठंडा मौसम (15–24°C) एवं अच्छी हवा निकासी",
+      "symptoms_en": "Broad lush green lobed leaves free of dark concentric target spots or chalky white underside blisters.",
+      "symptoms_hi": "चौड़ी, गहरी हरी पत्तियां, बिना किसी काले गोल धब्बे या सफेद छालों के।",
+      "action_en": [
+        "Keep fields free of crucifer weeds and stagnant water after winter rain.",
+        "Check lower leaves weekly once temperature rises above 18°C with fog/clouds."
+      ],
+      "action_hi": [
+        "खेत को खरपतवार मुक्त रखें और बारिश के बाद पानी न रुकने दें।",
+        "तापमान 18°C से ऊपर और बादल होने पर निचली पत्तियों की साप्ताहिक जांच करें।"
+      ]
+    },
+    {
+      "id": "mustard_alternaria_blight",
+      "crop": "mustard",
+      "is_healthy": false,
+      "name_en": "Mustard Alternaria Blight",
+      "name_hi": "सरसों का अल्टरनेरिया झुलसा",
+      "pathogen": "Alternaria brassicae",
+      "etl_pct": 10,
+      "peak_months": "Jan–Feb",
+      "weather_trigger_en": "Cloudy humid weather (18–25°C, RH > 80%) and dense crop canopy",
+      "weather_trigger_hi": "बादल, अधिक नमी (>80%) और घनी फसल (18–25°C)",
+      "symptoms_en": "Dark brown-to-black circular spots showing faint concentric target-board rings, often surrounded by a yellow chlorotic halo; spreads upward to pods.",
+      "symptoms_hi": "पत्ती पर गहरे भूरे-काले गोल धब्बे जिनमें चक्रदार (छल्लेदार) घेरे और किनारे पीला घेरा होता है; बाद में फलियों पर भी फैलता है।",
+      "action_en": [
+        "Remove heavily blighted bottom leaves carefully to reduce upward spore splash onto pods.",
+        "Avoid excessive irrigation during cloudy winter spells.",
+        "Bio-safe step: foliar spray of garlic bulb extract or Pseudomonas fluorescens in early stages; consult KVK for Mancozeb 75 WP protective spray if siliquae (pods) are at risk."
+      ],
+      "action_hi": [
+        "निचली अत्यधिक संक्रमित पत्तियों को हटाकर नष्ट करें ताकि फलियों तक रोग न पहुंचे।",
+        "बादल और नमी वाले दिनों में अनावश्यक सिंचाई न करें।",
+        "प्रारंभिक अवस्था में जैविक उपचार (लहसुन अर्क / स्यूडोमोनास) या फलियों की सुरक्षा हेतु KVK सलाह से मैन्कोजेब का प्रयोग करें।"
+      ]
+    },
+    {
+      "id": "mustard_white_rust",
+      "crop": "mustard",
+      "is_healthy": false,
+      "name_en": "Mustard White Rust",
+      "name_hi": "सरसों का सफेद रतुआ (रोली)",
+      "pathogen": "Albugo candida",
+      "etl_pct": 10,
+      "peak_months": "Dec–Feb",
+      "weather_trigger_en": "Cool humid winter nights (10–18°C) with persistent morning dew",
+      "weather_trigger_hi": "ठंडी और नम रातें (10–18°C) तथा सुबह की लंबी ओस",
+      "symptoms_en": "Chalky white or creamy raised blister-like pustules on leaves (especially underside) paired with yellow mottling on top; severe cases deform flowers ('staghead').",
+      "symptoms_hi": "पत्तियों पर उभरे हुए सफेद चाक जैसे दाने/फफोले और ऊपरी सतह पर पीलापन; गंभीर अवस्था में फूल मोटे व विकृत (स्टैगहेड) हो जाते हैं।",
+      "action_en": [
+        "Pluck and bury/destroy any swollen 'staghead' floral shoots before oospores drop into soil.",
+        "Sow mustard in mid-October to avoid peak December white rust weather.",
+        "Use disease-resistant mustard cultivars (e.g., RH-749, Giriraj / DRMRIJ-31) and Trichoderma seed treatment next season; verify KVK fungicide guidance for severe systemic spread."
+      ],
+      "action_hi": [
+        "रोगग्रस्त मोटे/विकृत फूलों (स्टैगहेड) को तोड़कर खेत से दूर नष्ट करें ताकि मिट्टी में बीजाणु न गिरें।",
+        "अक्टूबर मध्य में समय पर बुवाई करने से दिसंबर के रोग प्रकोप से बचाव होता है।",
+        "रोगरोधी किस्में (RH-749, गिरिराज) अपनाएं और गंभीर प्रकोप पर KVK से सलाह लें।"
+      ]
+    },
+    {
+      "id": "chickpea_healthy",
+      "crop": "chickpea",
+      "is_healthy": true,
+      "name_en": "Healthy Chickpea",
+      "name_hi": "स्वस्थ चना",
+      "pathogen": "None (Healthy pinnate leaflets)",
+      "etl_pct": 0,
+      "peak_months": "Oct–Mar",
+      "weather_trigger_en": "Well-drained loamy soil, moderate cool dry weather",
+      "weather_trigger_hi": "अच्छी जल निकासी वाली मिट्टी और सूखा ठंडा मौसम",
+      "symptoms_en": "Crisp green compound pinnate leaflets with upright stems and healthy root collar.",
+      "symptoms_hi": "छोटी गहरी हरी पत्तियां, सीधा तना और स्वस्थ जड़ क्षेत्र।",
+      "action_en": [
+        "Ensure no waterlogging in low-lying pockets of the field.",
+        "Scout stems and lower leaflets after any winter shower."
+      ],
+      "action_hi": [
+        "खेत के निचले हिस्सों में पानी जमा न होने दें।",
+        "सर्दियों की बारिश के बाद तने और निचली पत्तियों की जांच जरूर करें।"
+      ]
+    },
+    {
+      "id": "chickpea_ascochyta_blight",
+      "crop": "chickpea",
+      "is_healthy": false,
+      "name_en": "Chickpea Ascochyta Blight",
+      "name_hi": "चने का एस्कोकाइटा झुलसा",
+      "pathogen": "Ascochyta rabiei",
+      "etl_pct": 10,
+      "peak_months": "Jan–Feb",
+      "weather_trigger_en": "Winter rains, cool wet winds (15–22°C, >65% RH)",
+      "weather_trigger_hi": "सर्दियों की बारिश, ठंडी नम हवा (15–22°C)",
+      "symptoms_en": "Pale tan/straw circular lesions on leaflets and pods ringed by a dark brown border with tiny black fruiting dots (pycnidia); stem lesions cause shoot breakage.",
+      "symptoms_hi": "पत्तियों व फलियों पर हल्के भूरे-पुआल रंग के धब्बे जिनके चारों ओर गहरी भूरी किनारी और बारीक काले बिंदु होते हैं; तने टूट सकते हैं।",
+      "action_en": [
+        "Immediately avoid walking/cultivating through wet chickpea foliage to stop mechanical spread.",
+        "Practice 3-year crop rotation away from legumes and use certified seed treated with Trichoderma + Thiram.",
+        "Consult KVK after winter rain for protective foliar fungicides on susceptible varieties."
+      ],
+      "action_hi": [
+        "गीली फसल के बीच चलने या निराई-गुड़ाई से बचें ताकि रोग दूसरे पौधों में न फैले।",
+        "3 साल का फसल चक्र अपनाएं और बुवाई से पहले ट्राइकोडर्मा/थायरम से बीज उपचार करें।",
+        "बारिश के तुरंत बाद सुरक्षात्मक छिड़काव हेतु नजदीकी KVK से संपर्क करें।"
+      ]
+    },
+    {
+      "id": "chickpea_fusarium_wilt",
+      "crop": "chickpea",
+      "is_healthy": false,
+      "name_en": "Chickpea Fusarium Wilt",
+      "name_hi": "चने का उकठा रोग (विल्ट)",
+      "pathogen": "Fusarium oxysporum f. sp. ciceri",
+      "etl_pct": 10,
+      "peak_months": "Nov–Feb",
+      "weather_trigger_en": "Warm dry spells (>24°C) and soil-borne moisture stress",
+      "weather_trigger_hi": "गर्म-सूखा मौसम (>24°C) और मिट्टी जनित तनाव",
+      "symptoms_en": "Drooping and dull straw-yellow discoloration of compound leaflets starting on scattered plants; slicing the stem reveals dark brown inner vascular streaking.",
+      "symptoms_hi": "पत्तियों का मुरझाकर हल्का पीला/सूखा दिखना; मुख्य तने को चीरने पर अंदर से भूरा या काला रंग दिखाई देता है।",
+      "action_en": [
+        "IMPORTANT: Foliar sprays do NOT cure soil-borne vascular wilt — check split stem pith first to confirm!",
+        "Uproot completely wilted plants gently and burn outside field; mark affected soil patches.",
+        "Follow deep summer ploughing, intercropping with linseed/mustard, Trichoderma soil enrichment (2.5 kg in 50 kg compost), and sow wilt-resistant JG-14 / JAKI-9218 / Pusa-362."
+      ],
+      "action_hi": [
+        "सावधानी: उकठा मिट्टी जनित रोग है — पत्तियों पर स्प्रे काम नहीं करता; पहले तने को चीरकर भूरापन जांचें।",
+        "पूरी तरह सूखे पौधों को उखाड़कर खेत से बाहर नष्ट करें।",
+        "गर्मी में गहरी जुताई, सरसों/अलसी के साथ अंतर-फसल, गोबर खाद में ट्राइकोडर्मा मिलाकर भूमि उपचार और उकठा-रोधी किस्में (JG-14, JAKI-9218) बोएं।"
+      ]
+    },
+    {
+      "id": "potato_healthy",
+      "crop": "potato",
+      "is_healthy": true,
+      "name_en": "Healthy Potato",
+      "name_hi": "स्वस्थ आलू",
+      "pathogen": "None (Healthy ribbed leaflets)",
+      "etl_pct": 0,
+      "peak_months": "Oct–Mar",
+      "weather_trigger_en": "Cool clear mornings, well-aerated ridges",
+      "weather_trigger_hi": "साफ मौसम और अच्छी हवा वाली मेड़ें",
+      "symptoms_en": "Deep green ribbed compound leaflets with clean leaf tips and intact margins.",
+      "symptoms_hi": "गहरी हरी झुर्रीदार पत्तियां, साफ किनारे और बिना किसी काले धब्बे के।",
+      "action_en": [
+        "Keep ridges well earthed up so developing tubers never turn green or catch rain-washed spores.",
+        "Irrigate in the morning hours so canopy foliage dries before evening."
+      ],
+      "action_hi": [
+        "मेड़ों पर मिट्टी ठीक से चढ़ाए रखें ताकि कंद सुरक्षित रहें।",
+        "सिंचाई सुबह के समय करें ताकि शाम तक पत्तियां सूख जाएं।"
+      ]
+    },
+    {
+      "id": "potato_early_blight",
+      "crop": "potato",
+      "is_healthy": false,
+      "name_en": "Potato Early Blight",
+      "name_hi": "आलू का अगेती झुलसा",
+      "pathogen": "Alternaria solani",
+      "etl_pct": 15,
+      "peak_months": "Jan–Feb",
+      "weather_trigger_en": "Alternating wet/dry cycles and warmer afternoon temperatures (22–28°C)",
+      "weather_trigger_hi": "कभी नमी कभी सूखा तथा मध्यम गर्म तापमान (22–28°C)",
+      "symptoms_en": "Dark brown-to-charcoal angular/round spots with distinct concentric bullseye rings restricted by leaf veins, starting on older bottom leaves.",
+      "symptoms_hi": "पुरानी निचली पत्तियों पर गहरे भूरे-काले धब्बे जिनमें स्पष्ट छल्लेदार घेरे और किनारे हल्का पीलापन होता है।",
+      "action_en": [
+        "Strengthen plant vigor with adequate Potassium and balanced Nitrogen (deficient plants suffer far worse Early Blight).",
+        "Switch from overhead wetting to light furrow irrigation in morning hours.",
+        "Consult KVK for protective copper or Mancozeb scheduling if lower-canopy incidence crosses 15%."
+      ],
+      "action_hi": [
+        "पोटाश और संतुलित उर्वरक दें क्योंकि कमजोर पौधों में अगेती झुलसा तेजी से बढ़ता है।",
+        "सुबह के समय नालियों में हल्की सिंचाई करें।",
+        "निचली पत्तियों में प्रकोप 15% पार करने पर KVK की सलाह से सुरक्षात्मक छिड़काव करें।"
+      ]
+    },
+    {
+      "id": "potato_late_blight",
+      "crop": "potato",
+      "is_healthy": false,
+      "name_en": "Potato Late Blight",
+      "name_hi": "आलू का पछेती झुलसा (महारोग)",
+      "pathogen": "Phytophthora infestans",
+      "etl_pct": 5,
+      "peak_months": "Dec–Feb",
+      "weather_trigger_en": "HIGH ALERT: Foggy, cloudy weather (10–18°C) & relative humidity > 85% for 48+ hrs",
+      "weather_trigger_hi": "अति गंभीर चेतावनी: घना कोहरा, बादल (10–18°C) और >85% नमी",
+      "symptoms_en": "Water-soaked dark olive-brown to purplish-black blotches rapidly spreading inward from leaf tips and margins, bordered by pale yellow-green halo.",
+      "symptoms_hi": "पत्ती के किनारों और सिरे से अंदर फैलते हुए पानी से भीगे गहरे भूरे-काले/बैंगनी धब्बे; सुबह पत्ती के नीचे सफेद फफूंद दिख सकती है।",
+      "action_en": [
+        "CRITICAL EMERGENCY (5% ETL): Late Blight can wipe out an entire field within 5–7 days during fog!",
+        "Stop irrigation immediately during foggy alerts; remove & bury isolated blighted leaves gently in polybags.",
+        "Contact your KVK or ICAR-CPRI regional advisory urgently for systemic/protective blight management and earth-up ridges to protect tubers."
+      ],
+      "action_hi": [
+        "तत्काल चेतावनी (5% सीमा): कोहरे में पछेती झुलसा 5–7 दिनों में पूरी फसल नष्ट कर सकता है!",
+        "कोहरे के दौरान सिंचाई तुरंत रोक दें और शुरुआती संक्रमित पत्तियों को सावधानी से दबा दें।",
+        "तुरंत किसान कॉल सेंटर (1800-180-1551) या नजदीकी KVK से संपर्क कर अनुशंसित उपचार शुरू करें।"
+      ]
+    }
+  ]
+}
