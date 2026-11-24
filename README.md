@@ -4,6 +4,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Android APK](https://img.shields.io/badge/Android-API%2021--35%20Offline%20APK-15803D.svg)](RabiCropDoctor.apk)
+[![CI Check](https://github.com/lunganlungpg/rabi-crop-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/lunganlungpg/rabi-crop-doctor/actions/workflows/ci.yml)
+[![1-Year Roadmap](https://img.shields.io/badge/Roadmap-2026--2027%20(1%20Year)-0284C7.svg)](ROADMAP.md)
+[![Co-Contributors Welcome](https://img.shields.io/badge/PRs%20%26%20Co--Contributors-Welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Bilingual](https://img.shields.io/badge/Language-English%20%7C%20हिन्दी-D97706.svg)](#key-features-for-farmers)
 [![Models](https://img.shields.io/badge/Models-ANN%20%2B%20RF%20%2B%20RBF--SVM-2563EB.svg)](#ml-vs-ann-classification-benchmark)
 
@@ -78,6 +81,9 @@ Regional disease incidence (%) and Wheeler PDI metrics across major Rabi-produci
 ```text
 rabi_crop_doctor/
 ├── RabiCropDoctor.apk                 # Ready-to-install signed offline Android APK (API 21–35)
+├── ROADMAP.md                         # 1-year stress-free collaborative roadmap (Nov 2026 – Nov 2027)
+├── CONTRIBUTING.md                    # Friendly co-contributor guide, parity checklist & co-author format
+├── .github/                           # GitHub Actions CI parity checks, PR & Issue templates
 ├── build_apk.py                       # Builds APK from scratch (AAPT2 + Javac + D8 + apksigner)
 ├── verify_apk.py                      # Validates manifest, offline assets, and APK signatures
 ├── python/
@@ -129,11 +135,25 @@ python tests/test_parity_and_pipeline.py
 
 ---
 
-## 👤 Author & Contributors
+## 🗓️ 1-Year Stress-Free Collaborative Roadmap (Nov 2026 – Nov 2027)
+
+Designed for **steady, async, zero-crunch collaboration** aligned naturally with Indian Rabi crop cycles across agronomy, language, ML/ANN, and Android contributors — see full milestones in [**`ROADMAP.md`**](ROADMAP.md) and developer workflow in [**`CONTRIBUTING.md`**](CONTRIBUTING.md):
+
+| Quarter | Months | Release Goal | Focus |
+|:---:|:---|:---|:---|
+| **Q1** | Dec 2026 – Feb 2027 | `v1.1` Field Feedback | Collect real winter Rabi smartphone photos & KVK feedback across North/Central India |
+| **Q2** | Mar – May 2027 | `v1.2` Model Upgrades | Fine-tune ML & ANN weights on real imagery + false-positive audits |
+| **Q3** | Jun – Aug 2027 | `v1.3` Localization | Add Punjabi, Marathi, Gujarati & Bengali UI + Barley/Lentil/Pea + voice readout exploration |
+| **Q4** | Sep – Nov 2027 | `v2.0` Open-Science Release | Pre-sowing budget-Android pilot, open dataset archive & joint co-authored manuscript |
+
+---
+
+## 👤 Author & Co-Contributors
 
 <a href="https://github.com/lunganlungpg"><img src="https://github.com/lunganlungpg.png" width="64" alt="Lunganlung P. G." /></a>
 
 - **[Lunganlung P. G.](https://github.com/lunganlungpg)** — Creator, Statistical Modeling & Android APK Maintainer (*Division of Agricultural Statistics, ICAR-IARI / ICAR-IASRI, New Delhi*)
+- *Open to Co-Contributors in Agronomy, Languages, ML/ANN & Mobile UI!* — Add yourself via PR using [`CONTRIBUTING.md`](CONTRIBUTING.md) (`Co-authored-by:` commits automatically link your GitHub profile here).
 
 ---
 
