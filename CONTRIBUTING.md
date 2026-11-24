@@ -18,6 +18,19 @@ Our core philosophy is **calm, sustainable, long-term collaboration** over a 1-y
 
 ---
 
+## 📷 Q1 Field Photos & Hindi UX Feedback (Dec 2026–Feb 2027)
+
+Farmers, KVK specialists, and scouts can help validate the app with real winter-season leaves from Wheat, Mustard, Chickpea, and Potato:
+
+1. Capture the whole leaf in focus in daylight, shade, or overcast light. Include varied natural backgrounds; avoid people, faces, and identifying details.
+2. Share only photos you took or have permission to contribute, and get the field owner's consent. Remove EXIF/location metadata before sharing; do not include names, phone numbers, or exact field coordinates.
+3. Use a disease folder only when the diagnosis is confirmed by a qualified reviewer. Otherwise, describe the condition as uncertain in the feedback issue rather than adding it as a training label.
+4. Submit accepted, consented photos in a pull request under `data/custom/<crop>_<disease>/` (for example, `data/custom/wheat_yellow_rust/`). Use `.jpg`, `.jpeg`, `.png`, or `.webp`; the image loader reads these class-named folders for `--image-dir` training. Include the capture lighting and broad state/region in the PR description, not in filenames or precise location metadata.
+
+To share field-testing results or Hindi UI feedback, open a **Q1 Field Photo / Hindi UX Feedback** issue. Mention the screen or prompt, what was unclear, and a suggested everyday Hindi wording if available. For camera feedback, note whether framing, focus, lighting, or leaf placement was the problem. Do not post personal or precise location information. Feedback can be submitted without photos.
+
+---
+
 ## 🔀 Simple Co-Contributor Git Workflow
 
 1. **Fork or Create a Feature Branch** from `main`:
