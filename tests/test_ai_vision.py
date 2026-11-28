@@ -32,13 +32,18 @@ def test_python_ai_multi_model_and_fallback() -> None:
             return 200, {
                 "models": [
                     {
-                        "name": "models/gemini-2.5-flash",
-                        "displayName": "Gemini 2.5 Flash",
+                        "name": "models/gemini-3.5-flash-lite",
+                        "displayName": "Gemini 3.5 Flash-Lite",
                         "supportedGenerationMethods": ["generateContent"],
                     },
                     {
-                        "name": "models/gemini-2.5-pro",
-                        "displayName": "Gemini 2.5 Pro",
+                        "name": "models/gemini-flash-lite-latest",
+                        "displayName": "Gemini Flash-Lite Latest",
+                        "supportedGenerationMethods": ["generateContent"],
+                    },
+                    {
+                        "name": "models/gemini-2.5-flash",
+                        "displayName": "Retired Gemini 2.5 Flash",
                         "supportedGenerationMethods": ["generateContent"],
                     },
                     {
@@ -49,11 +54,11 @@ def test_python_ai_multi_model_and_fallback() -> None:
                 ]
             }
 
-        # Simulate schema rejection (400) on gemini-2.5-pro first call, succeeding without schema
-        if "gemini-2.5-pro" in url and "responseSchema" in body["generationConfig"]:
+        # Simulate schema rejection (400) on gemini-flash-lite-latest first call, succeeding without schema
+        if "gemini-flash-lite-latest" in url and "responseSchema" in body["generationConfig"]:
             return 400, {"error": {"message": "Schema unsupported"}}
 
-        if "gemini-3-flash-preview" in url:
+        if "gemini-4-argon" in url:
             return 429, {"error": {"message": "Rate limit exceeded"}}
 
         payload = {
@@ -65,7 +70,7 @@ def test_python_ai_multi_model_and_fallback() -> None:
             "diagnosis_en": "Wheat Yellow (Stripe) Rust",
             "diagnosis_hi": "गेहूँ का पीला रतुआ",
             "pathogen": "Puccinia striiformis",
-            "confidence_pct": 94.0 if "pro" in url else 90.0,
+            "confidence_pct": 94.0 if "latest" in url else 90.0,
             "estimated_severity_pct": 42.0,
             "severity_grade": 3,
             "symptoms_en": "Yellow-orange powdery stripes along veins.",
@@ -77,12 +82,12 @@ def test_python_ai_multi_model_and_fallback() -> None:
         return 200, {"candidates": [{"content": {"parts": [{"text": json.dumps(payload)}]}}]}
 
     listed = list_available_models("test-key", http_fn=fake_http)
-    assert [m["id"] for m in listed] == ["gemini-2.5-flash", "gemini-2.5-pro"]
+    assert [m["id"] for m in listed] == ["gemini-3.5-flash-lite", "gemini-flash-lite-latest"]
 
     outcome = analyze_leaf_multi_model(
         image_path=sample_img,
         api_key="test-key",
-        models=["gemini-2.5-flash", "gemini-2.5-pro", "gemini-3-flash-preview"],
+        models=["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-4-argon"],
         crop_hint="wheat",
         http_fn=fake_http,
     )
@@ -122,7 +127,7 @@ ai.saveConfig({
   enabled: true,
   apiKey: "AIzaFakeKey123",
   rememberKey: true,
-  selectedModels: ["gemini-2.5-flash", "gemini-2.5-pro"],
+  selectedModels: ["gemini-3.5-flash-lite", "gemini-flash-lite-latest"],
   customModels: ["models/gemini-3.8-flash"],
 }, fakeStorage);
 
@@ -143,15 +148,16 @@ async function run() {
         status: 200,
         json: async () => ({
           models: [
-            { name: "models/gemini-2.5-flash", displayName: "Gemini 2.5 Flash", supportedGenerationMethods: ["generateContent"] },
-            { name: "models/gemini-2.5-pro", displayName: "Gemini 2.5 Pro", supportedGenerationMethods: ["generateContent"] },
+            { name: "models/gemini-3.5-flash-lite", displayName: "Gemini 3.5 Flash-Lite", supportedGenerationMethods: ["generateContent"] },
+            { name: "models/gemini-flash-lite-latest", displayName: "Gemini Flash-Lite Latest", supportedGenerationMethods: ["generateContent"] },
+            { name: "models/gemini-2.5-flash", displayName: "Retired", supportedGenerationMethods: ["generateContent"] },
             { name: "models/gemini-2.5-flash-tts", displayName: "TTS", supportedGenerationMethods: ["generateContent"] },
           ],
         }),
       };
     }
     const body = JSON.parse(opts.body);
-    if (url.includes("gemini-2.5-pro") && body.generationConfig.responseSchema) {
+    if (url.includes("gemini-flash-lite-latest") && body.generationConfig.responseSchema) {
       return { ok: false, status: 400, json: async () => ({ error: { message: "No schema" } }) };
     }
     return {
@@ -169,7 +175,7 @@ async function run() {
                 diagnosis_en: "Wheat Yellow (Stripe) Rust",
                 diagnosis_hi: "गेहूँ का पीला रतुआ",
                 pathogen: "Puccinia striiformis",
-                confidence_pct: url.includes("pro") ? 95 : 89,
+                confidence_pct: url.includes("latest") ? 95 : 89,
                 estimated_severity_pct: 35,
                 severity_grade: 3,
                 symptoms_en: "Yellow linear stripes",
@@ -190,7 +196,7 @@ async function run() {
 
   const res = await ai.analyzeLeafMultiModel({
     apiKey: "AIzaFakeKey123",
-    models: ["gemini-2.5-flash", "gemini-2.5-pro"],
+    models: ["gemini-3.5-flash-lite", "gemini-flash-lite-latest"],
     dataUrl: "data:image/jpeg;base64,AAAA",
     cropHint: "wheat",
     knownClasses: ["wheat_healthy", "wheat_yellow_rust"],

@@ -18,7 +18,7 @@
     enabled: false,
     apiKey: "",
     rememberKey: true,
-    selectedModels: ["gemini-2.5-flash"],
+    selectedModels: ["gemini-3.5-flash-lite"],
     customModels: [],
     discoveredModels: [],
   };

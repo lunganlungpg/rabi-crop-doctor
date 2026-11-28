@@ -26,13 +26,14 @@ from typing import Any
 
 
 GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
-DEFAULT_AI_MODELS: tuple[str, ...] = ("gemini-2.5-flash",)
+DEFAULT_AI_MODELS: tuple[str, ...] = ("gemini-3.5-flash-lite",)
 KNOWN_DEFAULT_MODELS: tuple[dict[str, str], ...] = (
-    {"id": "gemini-2.5-flash", "label": "Gemini 2.5 Flash"},
-    {"id": "gemini-2.5-flash-lite", "label": "Gemini 2.5 Flash-Lite"},
-    {"id": "gemini-2.5-pro", "label": "Gemini 2.5 Pro"},
-    {"id": "gemini-3-flash-preview", "label": "Gemini 3 Flash Preview"},
-    {"id": "gemini-3-pro-preview", "label": "Gemini 3 Pro Preview"},
+    {"id": "gemini-3.5-flash-lite", "label": "Gemini 3.5 Flash-Lite (Fast Free-Tier Default)"},
+    {"id": "gemini-flash-lite-latest", "label": "Gemini Flash-Lite Latest"},
+    {"id": "gemini-3.8-flash", "label": "Gemini 3.8 Flash"},
+    {"id": "gemini-flash-latest", "label": "Gemini Flash Latest"},
+    {"id": "gemini-pro-latest", "label": "Gemini Pro Latest"},
+    {"id": "gemini-4-argon", "label": "Gemini 4 Argon (Frontier)"},
 )
 
 RESPONSE_SCHEMA: dict[str, Any] = {
@@ -98,19 +99,40 @@ def build_prompt(crop_hint: str | None, known_classes: list[str] | None = None) 
         if crop_hint and crop_hint.lower().strip() != "all"
         else "Auto-detect the crop species from the image."
     )
-    classes_str = ", ".join(known_classes) if known_classes else (
-        "wheat_healthy, wheat_yellow_rust, wheat_brown_rust, "
-        "mustard_healthy, mustard_alternaria_blight, mustard_white_rust, "
-        "chickpea_healthy, chickpea_ascochyta_blight, chickpea_fusarium_wilt, "
-        "potato_healthy, potato_early_blight, potato_late_blight"
-    )
+    base_classes = list(known_classes) if known_classes else [
+        "wheat_healthy",
+        "wheat_yellow_rust",
+        "wheat_brown_rust",
+        "mustard_healthy",
+        "mustard_alternaria_blight",
+        "mustard_white_rust",
+        "chickpea_healthy",
+        "chickpea_ascochyta_blight",
+        "chickpea_fusarium_wilt",
+        "potato_healthy",
+        "potato_early_blight",
+        "potato_late_blight",
+    ]
+    extra_classes = [
+        "wheat_black_rust",
+        "wheat_leaf_blight",
+        "wheat_powdery_mildew",
+        "wheat_scab",
+        "wheat_flag_smut",
+        "wheat_aphid",
+        "wheat_mite",
+        "wheat_stem_fly",
+    ]
+    all_ids = ", ".join(dict.fromkeys([*base_classes, *extra_classes]))
     return "\n".join([
         "You are an expert Indian ICAR / Krishi Vigyan Kendra (KVK) plant pathologist.",
         "Inspect the attached image carefully and respond ONLY with valid JSON matching the requested schema.",
         hint,
-        f'If the photo matches one of these canonical Rabi classes, use its exact id in canonical_class_id: [{classes_str}]. Otherwise use a lowercase snake_case id like "<crop>_<condition>" (e.g. "wheat_black_rust", "wheat_aphid", "non_leaf").',
+        "Diagnose the true disease, pest, nutrient stress, or healthy state strictly from the visual evidence in the photo—never force-fit an unrelated condition into a rust or blight label.",
+        "Distinguish carefully between foliar fungal symptoms (linear yellow rust stripes vs scattered brown rust pustules vs black stem rust vs white powdery mildew vs tan leaf blight), head/spike diseases (wheat scab / Fusarium head blight showing premature bleached/straw spikelets vs dark smutted ears), and insect/mite pests (aphids, mites, stem fly).",
+        f'For canonical_class_id, output a lowercase snake_case "<crop>_<condition>" id (matching [{all_ids}] when applicable, or "<crop>_<condition>" for any other condition).',
         "Rules:",
-        "- Set is_plant_leaf=false if the image does not clearly show a plant leaf, stem, ear/spike, or crop tissue.",
+        "- Close-up/macro photos of leaf surfaces, pustules, stems, or grain ears ARE valid crop photos (keep is_plant_leaf=true even if cropped or slightly low-res). Set is_plant_leaf=false ONLY for completely non-plant subjects (e.g., blank wall, face, vehicle, text document).",
         "- severity_grade must follow the 0-5 botanical scale: 0 (<=2% healthy/trace), 1 (<=10%), 2 (<=25%), 3 (<=50%), 4 (<=75%), 5 (>75%). If healthy, set estimated_severity_pct=0 and severity_grade=0.",
         "- Provide concise, accurate symptoms and actionable ICAR/KVK-aligned IPM steps in BOTH English (*_en) and Hindi (*_hi).",
         "- Advise confirming chemical spray dosages with the nearest KVK or Kisan Call Centre (1800-180-1551) when chemical control is mentioned.",
@@ -259,7 +281,13 @@ def list_available_models(api_key: str, http_fn: Any = None) -> list[dict[str, s
             and "generateContent" in methods
             and "embedding" not in name
             and "tts" not in name
-            and "image-generation" not in name
+            and "-image" not in name
+            and "nano-banana" not in name
+            and "transcribe" not in name
+            and "robotics" not in name
+            and "computer-use" not in name
+            and "customtools" not in name
+            and not name.startswith("models/gemini-2.")
         ):
             mid = normalize_model_id(name)
             display = entry.get("displayName")

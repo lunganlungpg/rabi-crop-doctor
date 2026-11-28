@@ -138,7 +138,7 @@ Full install guides, container details, and dependency tables live in [**`PACKAG
   rabi-doctor dataset_samples/wheat_yellow_rust_sample_1.png --crop wheat
 
   # Optional multi-model Gemini AI Vision check (uses GEMINI_API_KEY, falls back offline if unset):
-  rabi-doctor kaggle_samples/wheat_yellow_rust.jpg --crop wheat --ai --ai-models gemini-2.5-flash gemini-2.5-pro
+  rabi-doctor kaggle_samples/wheat_yellow_rust.jpg --crop wheat --ai --ai-models gemini-3.5-flash-lite gemini-flash-lite-latest
   ```
 - **📊 R Companion Package (`rabidoctor`, zero external CRAN dependencies):**
   ```r

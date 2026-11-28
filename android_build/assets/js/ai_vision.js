@@ -16,28 +16,33 @@
 
   const DEFAULT_MODELS = [
     {
-      id: "gemini-2.5-flash",
-      label: "Gemini 2.5 Flash (Fast Multimodal Default)",
-      tier: "flash",
-    },
-    {
-      id: "gemini-2.5-flash-lite",
-      label: "Gemini 2.5 Flash-Lite (Ultra-Fast / Low Quota)",
+      id: "gemini-3.5-flash-lite",
+      label: "Gemini 3.5 Flash-Lite (Fast Free-Tier Default)",
       tier: "lite",
     },
     {
-      id: "gemini-2.5-pro",
-      label: "Gemini 2.5 Pro (Deep Pathology Reasoning)",
-      tier: "pro",
+      id: "gemini-flash-lite-latest",
+      label: "Gemini Flash-Lite Latest",
+      tier: "lite",
     },
     {
-      id: "gemini-3-flash-preview",
-      label: "Gemini 3 Flash Preview",
+      id: "gemini-3.8-flash",
+      label: "Gemini 3.8 Flash (Standard)",
       tier: "flash",
     },
     {
-      id: "gemini-3-pro-preview",
-      label: "Gemini 3 Pro Preview",
+      id: "gemini-flash-latest",
+      label: "Gemini Flash Latest",
+      tier: "flash",
+    },
+    {
+      id: "gemini-pro-latest",
+      label: "Gemini Pro Latest (Deep Reasoning)",
+      tier: "pro",
+    },
+    {
+      id: "gemini-4-argon",
+      label: "Gemini 4 Argon (Frontier / Paid Tier)",
       tier: "pro",
     },
   ];
@@ -85,7 +90,7 @@
       enabled: true,
       apiKey: "",
       rememberKey: true,
-      selectedModels: ["gemini-2.5-flash"],
+      selectedModels: ["gemini-3.5-flash-lite"],
       customModels: [],
       discoveredModels: [],
     };
@@ -99,14 +104,17 @@
       const raw = store.getItem(STORAGE_CFG_KEY);
       if (!raw) return base;
       const parsed = JSON.parse(raw);
+      const rawSelected =
+        Array.isArray(parsed.selectedModels) && parsed.selectedModels.length > 0
+          ? parsed.selectedModels.map(String)
+          : base.selectedModels;
+      // Migrate retired gemini-2.5-flash default cleanly
+      const selected = rawSelected.map((m) => (m === "gemini-2.5-flash" ? "gemini-3.5-flash-lite" : m));
       return {
         enabled: parsed.enabled !== false,
         apiKey: typeof parsed.apiKey === "string" ? parsed.apiKey : "",
         rememberKey: parsed.rememberKey !== false,
-        selectedModels:
-          Array.isArray(parsed.selectedModels) && parsed.selectedModels.length > 0
-            ? parsed.selectedModels.map(String)
-            : base.selectedModels,
+        selectedModels: Array.from(new Set(selected)),
         customModels: Array.isArray(parsed.customModels) ? parsed.customModels.map(String) : [],
         discoveredModels: Array.isArray(parsed.discoveredModels) ? parsed.discoveredModels : [],
       };
@@ -123,7 +131,7 @@
         enabled: cfg.enabled !== false,
         apiKey: cfg.rememberKey !== false ? String(cfg.apiKey || "").trim() : "",
         rememberKey: cfg.rememberKey !== false,
-        selectedModels: Array.isArray(cfg.selectedModels) ? cfg.selectedModels : ["gemini-2.5-flash"],
+        selectedModels: Array.isArray(cfg.selectedModels) ? cfg.selectedModels : ["gemini-3.5-flash-lite"],
         customModels: Array.isArray(cfg.customModels) ? cfg.customModels : [],
         discoveredModels: Array.isArray(cfg.discoveredModels) ? cfg.discoveredModels : [],
       };
@@ -147,19 +155,45 @@
       cropHint && cropHint !== "all"
         ? `The user indicated the crop is likely "${cropHint}". Confirm from the image; if clearly another crop, report the true crop.`
         : "Auto-detect the crop species from the image.";
-    const classIds = Array.isArray(knownClasses)
-      ? knownClasses.map((c) => c.id || c).join(", ")
-      : "wheat_healthy, wheat_yellow_rust, wheat_brown_rust, mustard_healthy, mustard_alternaria_blight, mustard_white_rust, chickpea_healthy, chickpea_ascochyta_blight, chickpea_fusarium_wilt, potato_healthy, potato_early_blight, potato_late_blight";
+    const extraClasses = [
+      "wheat_black_rust",
+      "wheat_leaf_blight",
+      "wheat_powdery_mildew",
+      "wheat_scab",
+      "wheat_flag_smut",
+      "wheat_aphid",
+      "wheat_mite",
+      "wheat_stem_fly",
+    ];
+    const baseIds = Array.isArray(knownClasses)
+      ? knownClasses.map((c) => c.id || c)
+      : [
+          "wheat_healthy",
+          "wheat_yellow_rust",
+          "wheat_brown_rust",
+          "mustard_healthy",
+          "mustard_alternaria_blight",
+          "mustard_white_rust",
+          "chickpea_healthy",
+          "chickpea_ascochyta_blight",
+          "chickpea_fusarium_wilt",
+          "potato_healthy",
+          "potato_early_blight",
+          "potato_late_blight",
+        ];
+    const allIds = Array.from(new Set([...baseIds, ...extraClasses])).join(", ");
 
     return [
       "You are an expert Indian ICAR / Krishi Vigyan Kendra (KVK) plant pathologist.",
       "Inspect the attached image carefully and respond ONLY with valid JSON matching the requested schema.",
       hintText,
-      `If the photo matches one of these canonical Rabi classes, use its exact id in canonical_class_id: [${classIds}]. Otherwise use a lowercase snake_case id like "<crop>_<condition>" (e.g. "wheat_black_rust", "wheat_aphid", "non_leaf").`,
+      "Diagnose the true disease, pest, nutrient stress, or healthy state strictly from the visual evidence in the photo—never force-fit an unrelated condition into a rust or blight label.",
+      "Distinguish carefully between foliar fungal symptoms (linear yellow rust stripes vs scattered brown rust pustules vs black stem rust vs white powdery mildew vs tan leaf blight), head/spike diseases (wheat scab / Fusarium head blight showing premature bleached/straw spikelets vs dark smutted ears), and insect/mite pests (aphids, mites, stem fly).",
+      `For canonical_class_id, output a lowercase snake_case "<crop>_<condition>" id (matching [${allIds}] when applicable, or "<crop>_<condition>" for any other condition).`,
       "Rules:",
-      "- Set is_plant_leaf=false if the image does not clearly show a plant leaf, stem, ear/spike, or crop tissue.",
+      "- Close-up/macro photos of leaf surfaces, pustules, stems, or grain ears ARE valid crop photos (keep is_plant_leaf=true even if cropped or slightly low-res). Set is_plant_leaf=false ONLY for completely non-plant subjects (e.g., blank wall, face, vehicle, text document).",
       "- severity_grade must follow the 0-5 botanical scale: 0 (<=2% healthy/trace), 1 (<=10%), 2 (<=25%), 3 (<=50%), 4 (<=75%), 5 (>75%). If healthy, set estimated_severity_pct=0 and severity_grade=0.",
-      "- Provide concise, accurate, farmer-friendly symptoms and actionable ICAR/KVK-aligned IPM steps in BOTH English (*_en) and Hindi (*_hi).",
+      "- Provide concise, accurate symptoms and actionable ICAR/KVK-aligned IPM steps in BOTH English (*_en) and Hindi (*_hi).",
       "- Advise confirming chemical spray dosages with the nearest KVK or Kisan Call Centre (1800-180-1551) when chemical control is mentioned.",
     ].join("\n");
   }
@@ -312,7 +346,13 @@
           methods.includes("generateContent") &&
           !name.includes("embedding") &&
           !name.includes("tts") &&
-          !name.includes("image-generation")
+          !name.includes("-image") &&
+          !name.includes("nano-banana") &&
+          !name.includes("transcribe") &&
+          !name.includes("robotics") &&
+          !name.includes("computer-use") &&
+          !name.includes("customtools") &&
+          !name.startsWith("models/gemini-2.")
         );
       })
       .map((m) => ({
@@ -377,7 +417,7 @@
     if (!cleanKey) {
       throw new Error("Gemini API key is missing.");
     }
-    const rawModels = Array.isArray(models) && models.length > 0 ? models.map(normalizeModelId).filter(Boolean) : ["gemini-2.5-flash"];
+    const rawModels = Array.isArray(models) && models.length > 0 ? models.map(normalizeModelId).filter(Boolean) : ["gemini-3.5-flash-lite"];
     const modelList = Array.from(new Set(rawModels));
     const settled = await Promise.all(
       modelList.map((m) =>
