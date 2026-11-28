@@ -22,7 +22,21 @@ From the repository root:
 
 The download is extracted to data/kaggle_20k_crop_disease_images/. The raw images are ignored by Git and must not be pushed to this repository unless the dataset licence explicitly permits redistribution.
 
-## 3. Train
+
+## 3. Run training directly from GitHub (no local Kaggle setup)
+
+The repository includes a manually triggered GitHub Actions workflow at .github/workflows/kaggle-training.yml.
+
+1. In your GitHub repository, open Settings > Secrets and variables > Actions.
+2. Select New repository secret.
+3. Set the name to KAGGLE_API_TOKEN and paste your Kaggle API token as the value. Generate/manage it at https://www.kaggle.com/settings/api. Do not paste the token into a commit, issue, or chat.
+4. Open the Actions tab in GitHub.
+5. Select "Kaggle dataset training", choose Run workflow, optionally enter crop prefixes, and start the run.
+6. When the job finishes, open its run page and download the artifact named rabi-crop-doctor-kaggle-training. It contains the trained research model and evaluation outputs when training succeeds.
+
+The workflow uses GitHub-hosted CPU runners. It is not a GPU/CNN training job; it trains the current 28-feature Random Forest, RBF-SVM, MLP-ANN and soft-voting benchmark. GitHub Actions availability and runtime limits depend on your GitHub account and repository settings.
+
+## 4. Train locally
 
 The script scans nested class folders, uses official train/test folders when both are present, removes byte-identical duplicate files to reduce train/test leakage, extracts the project's deterministic 28 image features, and trains Random Forest, RBF-SVM, MLP-ANN, and a soft-voting probability ensemble.
 
@@ -34,7 +48,7 @@ To train only on selected crop prefixes (the prefix is inferred from the class d
 
 Do not assume the dataset contains the project's four existing crops or the same disease taxonomy. Inspect the discovered class counts and excluded/unpaired classes in the metrics before interpreting results.
 
-## 4. Outputs
+## 5. Outputs
 
 - models/kaggle_20k/trained_models.pkl — fitted sklearn models and scaler
 - models/kaggle_20k/evaluation_metrics.json — dataset provenance, class counts, split protocol, cross-validation and held-out metrics
