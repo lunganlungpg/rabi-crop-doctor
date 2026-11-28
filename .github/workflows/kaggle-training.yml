@@ -1,0 +1,74 @@
+name: Kaggle dataset training
+
+on:
+  workflow_dispatch:
+    inputs:
+      crops:
+        description: "Optional space-separated crop prefixes (blank = all classes)"
+        required: false
+        default: ""
+      cv_folds:
+        description: "Stratified cross-validation folds"
+        required: true
+        default: "3"
+
+permissions:
+  contents: read
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install kaggle
+
+      - name: Download Kaggle dataset
+        env:
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+        run: |
+          if [ -z "$KAGGLE_API_TOKEN" ]; then
+            echo "::error::Add KAGGLE_API_TOKEN under repository Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          mkdir -p data/kaggle_20k_crop_disease_images
+          kaggle datasets download -d jawadali1045/20k-multi-class-crop-disease-images \
+            -p data/kaggle_20k_crop_disease_images --unzip
+          find data/kaggle_20k_crop_disease_images -type f | head -40
+          echo "Downloaded image files: $(find data/kaggle_20k_crop_disease_images -type f | wc -l)"
+
+      - name: Train and evaluate
+        env:
+          PYTHONPATH: python
+          CROPS: ${{ inputs.crops }}
+          CV_FOLDS: ${{ inputs.cv_folds }}
+        run: |
+          BASE_ARGS=(--dataset-dir data/kaggle_20k_crop_disease_images --output-dir models/kaggle_20k --cv-folds "$CV_FOLDS")
+          if [ -n "$CROPS" ]; then
+            read -r -a CROP_ARGS <<< "$CROPS"
+            python python/train_kaggle_dataset.py "${BASE_ARGS[@]}" --crops "${CROP_ARGS[@]}"
+          else
+            python python/train_kaggle_dataset.py "${BASE_ARGS[@]}"
+          fi
+
+      - name: Upload trained models and evaluation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rabi-crop-doctor-kaggle-training
+          path: |
+            models/kaggle_20k/
+          if-no-files-found: warn
+          retention-days: 30

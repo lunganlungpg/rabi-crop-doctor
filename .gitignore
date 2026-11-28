@@ -7,6 +7,8 @@ android_build/build/
 *.idsig
 *.log
 models/*.pkl
+models/kaggle_20k/
 data/raw_images/
+data/kaggle_20k_crop_disease_images/
 android_build/debug.keystore
 android_build/build/
