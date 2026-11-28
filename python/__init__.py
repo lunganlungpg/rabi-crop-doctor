@@ -29,7 +29,7 @@ from .generate_rabi_dataset import CLASSES
 from .predict_image import predict_leaf_image
 from .train_and_evaluate import train_pipeline
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 
 __all__ = [
     "__version__",

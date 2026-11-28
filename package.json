@@ -1,6 +1,6 @@
 {
   "name": "@lunganlungpg/rabi-crop-doctor",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Zero-dependency offline plant pathology image feature extractor and ML/ANN classifier bundle for Indian Rabi crops (Wheat, Mustard, Chickpea, Potato).",
   "main": "index.js",
   "files": [

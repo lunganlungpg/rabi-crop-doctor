@@ -1,7 +1,7 @@
 Package: rabidoctor
 Type: Package
 Title: Rabi Crop Disease Incidence, Severity Grading, and KVK Advisory Toolkit
-Version: 1.0.1
+Version: 1.0.2
 Authors@R: person("Lunganlung", "P. G.",
     email = "227372907+lunganlungpg@users.noreply.github.com",
     role = c("aut", "cre"))
