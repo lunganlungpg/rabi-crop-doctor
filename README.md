@@ -46,7 +46,18 @@ Smallholder farmers rarely have reliable rural internet connectivity or paid dia
 
 ![RabiLeaf-1440 Sample Grid](plots/dataset_samples_grid.png)
 
-### 2. ML vs. ANN Model Performance & Convergence
+### 2. Real-Photo Rabi Samples (`Kaggle 20k+` Selective Wheat Subset, CC0-1.0)
+Curated real-field sample photos from [`jawadali1045/20k-multi-class-crop-disease-images`](https://www.kaggle.com/datasets/jawadali1045/20k-multi-class-crop-disease-images) (**CC0-1.0 Public Domain**), selectively filtered for Rabi crops active under [`ROADMAP.md`](ROADMAP.md) (`Q1: wheat, mustard, chickpea, potato` — of which `wheat` spans `11` classes / `2,101` raw images → `1,435` Train + `396` held-out Validation after duplicate removal; `51.01%` ensemble held-out acc, `0.8452` Macro ROC-AUC; see [`KAGGLE_TRAINING.md`](KAGGLE_TRAINING.md)):
+
+| Healthy Wheat | Yellow (Stripe) Rust | Brown (Leaf) Rust | Black (Stem) Rust |
+|:---:|:---:|:---:|:---:|
+| [<img src="kaggle_samples/wheat_healthy.jpg" width="180" alt="Healthy Wheat" />](kaggle_samples/wheat_healthy.jpg)<br>`wheat_healthy` | [<img src="kaggle_samples/wheat_yellow_rust.jpg" width="180" alt="Wheat Yellow Rust" />](kaggle_samples/wheat_yellow_rust.jpg)<br>`wheat_yellow_rust` | [<img src="kaggle_samples/wheat_brown_leaf_rust.jpg" width="180" alt="Wheat Brown Leaf Rust" />](kaggle_samples/wheat_brown_leaf_rust.jpg)<br>`wheat_brown_leaf_rust` | [<img src="kaggle_samples/wheat_black_rust.jpg" width="180" alt="Wheat Black Rust" />](kaggle_samples/wheat_black_rust.jpg)<br>`wheat_black_rust` |
+| **Wheat Leaf Blight** | **Wheat Powdery Mildew** | **Wheat Scab** | **Wheat Flag Smut** |
+| [<img src="kaggle_samples/wheat_leaf_blight.jpg" width="180" alt="Wheat Leaf Blight" />](kaggle_samples/wheat_leaf_blight.jpg)<br>`wheat_leaf_blight` | [<img src="kaggle_samples/wheat_powdery_mildew.jpg" width="180" alt="Wheat Powdery Mildew" />](kaggle_samples/wheat_powdery_mildew.jpg)<br>`wheat_powdery_mildew` | [<img src="kaggle_samples/wheat_scab.jpg" width="180" alt="Wheat Scab" />](kaggle_samples/wheat_scab.jpg)<br>`wheat_scab` | [<img src="kaggle_samples/wheat_flag_smut.jpg" width="180" alt="Wheat Flag Smut" />](kaggle_samples/wheat_flag_smut.jpg)<br>`wheat_flag_smut` |
+| **Wheat Aphid** | **Wheat Mite** | **Wheat Stem Fly** | **Quick Try (CLI)** |
+| [<img src="kaggle_samples/wheat_aphid.jpg" width="180" alt="Wheat Aphid" />](kaggle_samples/wheat_aphid.jpg)<br>`wheat_aphid` | [<img src="kaggle_samples/wheat_mite.jpg" width="180" alt="Wheat Mite" />](kaggle_samples/wheat_mite.jpg)<br>`wheat_mite` | [<img src="kaggle_samples/wheat_stem_fly.jpg" width="180" alt="Wheat Stem Fly" />](kaggle_samples/wheat_stem_fly.jpg)<br>`wheat_stem_fly` | Browse all 11 sample photos in [`kaggle_samples/`](kaggle_samples/) |
+
+### 3. ML vs. ANN Model Performance & Convergence
 Trained on a 28-dimensional plant pathology vision vector (`feature_extractor.py`), evaluated using 5-fold Stratified Cross-Validation and a held-out 20% test split ($n=288$):
 
 | Model Architecture | 5-Fold CV Acc | 12-Class Test Acc | Farmer Crop-Mode Acc | Macro F1 | ROC AUC (OvR) |
@@ -61,13 +72,13 @@ Trained on a 28-dimensional plant pathology vision vector (`feature_extractor.py
 
 ![ML vs ANN Comparison](plots/ml_vs_ann_comparison.png)
 
-### 3. Class Confusion Analysis & Physics-Driven Features
+### 4. Class Confusion Analysis & Physics-Driven Features
 Rotation-invariant **Structure Tensor Stripe Coherence** separates linear *Yellow Rust* stripes from scattered *Brown Rust* pustules, while **Radial Margin Lesion Bias** cleanly separates margin-invading *Potato Late Blight* from interior bullseye *Early Blight* spots:
 
 ![Confusion Matrices](plots/confusion_matrix_comparison.png)
 ![Feature Importance and Pathology Separation](plots/feature_importance_and_pathology.png)
 
-### 4. Indian Rabi Belt Disease Incidence & Weather Triggers
+### 5. Indian Rabi Belt Disease Incidence & Weather Triggers
 Regional disease incidence (%) and Wheeler PDI metrics across major Rabi-producing states (`data/rabi_field_incidence_india.csv`):
 
 ![India Rabi Disease Incidence](plots/india_rabi_incidence_heatmap.png)
@@ -97,18 +108,22 @@ rabi_crop_doctor/
 │   ├── feature_extractor.py           # 28-dim leaf segmentation + pathology texture/color engine
 │   ├── generate_rabi_dataset.py       # RabiLeaf-1440 benchmark generator
 │   ├── train_and_evaluate.py          # Trains RF, RBF-SVM, MLP-ANN, Deep-ANN & exports JSON weights
+│   ├── rabi_timeline.py               # ROADMAP.md & knowledge-base Rabi crop timeline resolver
+│   ├── train_kaggle_dataset.py        # Selective Kaggle 20k+ HTTP-Range download & benchmark trainer
 │   ├── build_web_bundle.py            # Packages models + knowledge + samples into models_data.js
 │   ├── predict_image.py               # CLI predictor for any leaf image
 │   ├── disease_incidence.py           # Plot Disease Incidence (%) & Wheeler PDI epidemiological engine
 │   ├── generate_plots.py              # 300 DPI static visualization figures
 │   └── generate_interactive_plots.py  # Interactive Plotly HTML dashboards
+├── kaggle_samples/                    # Curated CC0-1.0 sample photos from the Kaggle Wheat subset
 ├── web/                               # Bilingual PWA & offline WebView bundle
 ├── android_build/                     # Native Java camera/EXIF/gallery bridge & manifest
 ├── models/                            # Trained pickle, evaluation JSON metrics & offline JSON weights
 ├── data/                              # Knowledge base (EN/HI), incidence dataset & features CSV
 ├── plots/                             # Generated PNG figures & Plotly dashboards
 └── tests/
-    └── test_parity_and_pipeline.py    # Cross-language Python <-> JS feature & probability parity test
+    ├── test_parity_and_pipeline.py    # Cross-language Python <-> JS feature & probability parity test
+    └── test_rabi_timeline_and_kaggle.py # Timeline resolution & selective Kaggle pipeline tests
 ```
 
 ---
