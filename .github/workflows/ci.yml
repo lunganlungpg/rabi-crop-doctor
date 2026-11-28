@@ -43,6 +43,7 @@ jobs:
         run: |
           python python/train_and_evaluate.py
           python tests/test_parity_and_pipeline.py
+          python tests/test_rabi_timeline_and_kaggle.py
 
   verify-r-package:
     runs-on: ubuntu-latest

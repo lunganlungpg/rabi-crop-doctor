@@ -1,10 +1,47 @@
 name: Kaggle dataset training
 
 on:
+  schedule:
+    # Automated monthly run on the 1st at 02:30 UTC (08:00 IST) aligned with ROADMAP.md & Rabi scouting months
+    - cron: "30 2 1 * *"
+  push:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/kaggle-training.yml"
+      - "python/rabi_timeline.py"
+      - "python/train_kaggle_dataset.py"
+      - "ROADMAP.md"
+      - "data/rabi_crops_knowledge.json"
+      - "data/rabi_field_incidence_india.csv"
   workflow_dispatch:
     inputs:
+      timeline_mode:
+        description: "Timeline selector (roadmap, peak-month, all-rabi, or custom)"
+        type: choice
+        options:
+          - roadmap
+          - peak-month
+          - all-rabi
+          - custom
+        required: true
+        default: "roadmap"
+      quarter:
+        description: "Roadmap quarter override (auto, Q1, Q2, Q3, Q4)"
+        type: choice
+        options:
+          - auto
+          - Q1
+          - Q2
+          - Q3
+          - Q4
+        required: true
+        default: "auto"
+      as_of:
+        description: "Optional ISO reference date YYYY-MM-DD (blank = today)"
+        required: false
+        default: ""
       crops:
-        description: "Optional space-separated crop prefixes (blank = all classes)"
+        description: "Optional space-separated crop overrides (used when timeline_mode=custom or non-blank)"
         required: false
         default: ""
       cv_folds:
@@ -14,6 +51,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: kaggle-rabi-training
+  cancel-in-progress: true
 
 jobs:
   train:
@@ -36,16 +77,58 @@ jobs:
           python -m pip install kaggle six
           kaggle --version
 
-      - name: Download Kaggle dataset
+      - name: Resolve project timeline and Rabi crops
+        id: timeline
         env:
-          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+          PYTHONPATH: python
+          INPUT_TIMELINE_MODE: ${{ inputs.timeline_mode }}
+          INPUT_QUARTER: ${{ inputs.quarter }}
+          INPUT_AS_OF: ${{ inputs.as_of }}
+          INPUT_CROPS: ${{ inputs.crops }}
+          INPUT_CV_FOLDS: ${{ inputs.cv_folds }}
         run: |
           set -euo pipefail
-          if [ -z "${KAGGLE_API_TOKEN//[[:space:]]/}" ]; then
-            echo "::error::Add KAGGLE_API_TOKEN under repository Settings > Secrets and variables > Actions."
-            exit 1
+          MODE="${INPUT_TIMELINE_MODE:-roadmap}"
+          QUARTER="${INPUT_QUARTER:-auto}"
+          CV_FOLDS="${INPUT_CV_FOLDS:-3}"
+          echo "cv_folds=$CV_FOLDS" >> "$GITHUB_OUTPUT"
+          echo "quarter=$QUARTER" >> "$GITHUB_OUTPUT"
+          echo "as_of=$INPUT_AS_OF" >> "$GITHUB_OUTPUT"
+
+          if [ -n "${INPUT_CROPS//[[:space:]]/}" ]; then
+            CLEAN_CROPS=$(echo "$INPUT_CROPS" | xargs)
+            echo "timeline_mode=custom" >> "$GITHUB_OUTPUT"
+            echo "crops=$CLEAN_CROPS" >> "$GITHUB_OUTPUT"
+            echo "Using manual crop filter: $CLEAN_CROPS"
+          elif [ "$MODE" = "custom" ]; then
+            echo "::warning::timeline_mode=custom selected without crops; falling back to roadmap mode."
+            TL_ARGS=(--mode roadmap --quarter "$QUARTER")
+            [ -n "${INPUT_AS_OF//[[:space:]]/}" ] && TL_ARGS+=(--as-of "$INPUT_AS_OF")
+            RESOLVED_CROPS=$(python python/rabi_timeline.py "${TL_ARGS[@]}" --crops-only)
+            echo "timeline_mode=roadmap" >> "$GITHUB_OUTPUT"
+            echo "crops=$RESOLVED_CROPS" >> "$GITHUB_OUTPUT"
+            python python/rabi_timeline.py "${TL_ARGS[@]}"
+          else
+            TL_ARGS=(--mode "$MODE" --quarter "$QUARTER")
+            [ -n "${INPUT_AS_OF//[[:space:]]/}" ] && TL_ARGS+=(--as-of "$INPUT_AS_OF")
+            RESOLVED_CROPS=$(python python/rabi_timeline.py "${TL_ARGS[@]}" --crops-only)
+            echo "timeline_mode=$MODE" >> "$GITHUB_OUTPUT"
+            echo "crops=$RESOLVED_CROPS" >> "$GITHUB_OUTPUT"
+            python python/rabi_timeline.py "${TL_ARGS[@]}"
           fi
-          AUTH_MODE=$(python - << 'PY'
+
+      - name: Download Kaggle dataset
+        env:
+          PYTHONPATH: python
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+          TIMELINE_MODE: ${{ steps.timeline.outputs.timeline_mode }}
+          QUARTER: ${{ steps.timeline.outputs.quarter }}
+          AS_OF: ${{ steps.timeline.outputs.as_of }}
+          CROPS: ${{ steps.timeline.outputs.crops }}
+        run: |
+          set -euo pipefail
+          if [ -n "${KAGGLE_API_TOKEN//[[:space:]]/}" ]; then
+            AUTH_MODE=$(python - << 'PY'
           import json
           import os
           from pathlib import Path
@@ -97,18 +180,30 @@ jobs:
                   json_path.unlink()
               print("access_token")
           PY
-          )
-          if [ "$AUTH_MODE" = "legacy_json" ]; then
-            unset KAGGLE_API_TOKEN
+            )
+            if [ "$AUTH_MODE" = "legacy_json" ]; then
+              unset KAGGLE_API_TOKEN
+            else
+              export KAGGLE_API_TOKEN="$(cat ~/.kaggle/access_token)"
+            fi
           else
-            export KAGGLE_API_TOKEN="$(cat ~/.kaggle/access_token)"
+            echo "::notice::KAGGLE_API_TOKEN secret is not set; using selective anonymous download for public CC0 dataset jawadali1045/20k-multi-class-crop-disease-images."
           fi
+
           mkdir -p data/kaggle_20k_crop_disease_images
-          kaggle datasets download -d jawadali1045/20k-multi-class-crop-disease-images \
-            -p data/kaggle_20k_crop_disease_images --unzip
+          DL_ARGS=(--dataset-dir data/kaggle_20k_crop_disease_images --download-only)
+          if [ "$TIMELINE_MODE" = "custom" ]; then
+            read -r -a CROP_ARGS <<< "$CROPS"
+            DL_ARGS+=(--crops "${CROP_ARGS[@]}")
+          else
+            DL_ARGS+=(--timeline-mode "$TIMELINE_MODE" --quarter "$QUARTER")
+            [ -n "${AS_OF//[[:space:]]/}" ] && DL_ARGS+=(--as-of "$AS_OF")
+          fi
+          python python/train_kaggle_dataset.py "${DL_ARGS[@]}"
+
           IMAGE_COUNT=$(find data/kaggle_20k_crop_disease_images -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.bmp' -o -iname '*.webp' -o -iname '*.tif' -o -iname '*.tiff' \) | wc -l)
           find data/kaggle_20k_crop_disease_images -type f | sort | awk 'NR<=40'
-          echo "Downloaded image files: $IMAGE_COUNT"
+          echo "Downloaded selective Rabi image files: $IMAGE_COUNT"
           if [ "$IMAGE_COUNT" -eq 0 ]; then
             echo "::error::No image files found under data/kaggle_20k_crop_disease_images after download."
             exit 1
@@ -117,16 +212,24 @@ jobs:
       - name: Train and evaluate
         env:
           PYTHONPATH: python
-          CROPS: ${{ inputs.crops }}
-          CV_FOLDS: ${{ inputs.cv_folds }}
+          TIMELINE_MODE: ${{ steps.timeline.outputs.timeline_mode }}
+          QUARTER: ${{ steps.timeline.outputs.quarter }}
+          AS_OF: ${{ steps.timeline.outputs.as_of }}
+          CROPS: ${{ steps.timeline.outputs.crops }}
+          CV_FOLDS: ${{ steps.timeline.outputs.cv_folds }}
         run: |
           set -euo pipefail
           BASE_ARGS=(--dataset-dir data/kaggle_20k_crop_disease_images --output-dir models/kaggle_20k --cv-folds "$CV_FOLDS")
-          if [ -n "${CROPS//[[:space:]]/}" ]; then
+          if [ "$TIMELINE_MODE" = "custom" ]; then
             read -r -a CROP_ARGS <<< "$CROPS"
-            python python/train_kaggle_dataset.py "${BASE_ARGS[@]}" --crops "${CROP_ARGS[@]}"
+            BASE_ARGS+=(--crops "${CROP_ARGS[@]}")
           else
-            python python/train_kaggle_dataset.py "${BASE_ARGS[@]}"
+            BASE_ARGS+=(--timeline-mode "$TIMELINE_MODE" --quarter "$QUARTER")
+            [ -n "${AS_OF//[[:space:]]/}" ] && BASE_ARGS+=(--as-of "$AS_OF")
+          fi
+          python python/train_kaggle_dataset.py "${BASE_ARGS[@]}"
+          if [ -f models/kaggle_20k/training_summary.md ]; then
+            cat models/kaggle_20k/training_summary.md >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Upload trained models and evaluation

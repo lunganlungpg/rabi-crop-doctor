@@ -2,64 +2,59 @@
 
 Dataset: https://www.kaggle.com/datasets/jawadali1045/20k-multi-class-crop-disease-images
 
-This workflow creates a separate research model bundle in models/kaggle_20k/. It does not overwrite the existing 12-class production model or Android assets.
+This workflow creates a separate research model bundle in `models/kaggle_20k/`. It does not overwrite the existing 12-class production model or Android assets.
 
-## 1. Obtain Kaggle access
+## 1. Timeline-Driven Selective Rabi Crops
 
-1. Sign in to Kaggle and open the dataset page.
-2. Accept the dataset's terms/rules if Kaggle requests it.
-3. Create a Kaggle API token in Account settings.
-4. Install the Kaggle CLI: python -m pip install kaggle.
-5. Configure credentials using Kaggle's documented method. Keep credentials private; never commit kaggle.json, API tokens, or the downloaded dataset to Git.
+`python/rabi_timeline.py` resolves which Rabi crops are active from:
+- **`ROADMAP.md`** (Nov 2026 – Nov 2027 quarterly milestones):
+  - **Q1 (`Dec 2026 – Feb 2027`, incl. Nov 2026 kickoff, `v1.1`)**: `wheat`, `mustard`, `chickpea`, `potato`
+  - **Q2 (`Mar – May 2027`, `v1.2`)**: `wheat`, `mustard`, `chickpea`, `potato`
+  - **Q3 (`Jun – Aug 2027`, `v1.3`)**: adds `barley`, `lentil`, `field_pea`
+  - **Q4 (`Sep – Nov 2027`, `v2.0`)**: all 7 Rabi crops (`wheat`, `mustard`, `chickpea`, `potato`, `barley`, `lentil`, `field_pea`)
+- **`data/rabi_crops_knowledge.json` & `data/rabi_field_incidence_india.csv`**: monthly disease peaks (`peak-month` mode).
 
-## 2. Download the complete dataset
+When selecting from `jawadali1045/20k-multi-class-crop-disease-images`, the trainer:
+- Selects only matching Rabi crop classes (`Healthy Wheat` → `wheat_healthy`, `Flag Smut` → `wheat_flag_smut`, plus all `Wheat *` classes, merging nested `Train/Healthy Wheat/Wheat___Healthy`).
+- Excludes non-Rabi crops (`Cotton`, `Maize`, `Rice`, `Sugarcane` including `Yellow Rust Sugarcane` and Cotton `Wilt` / `Leaf Curl`).
+- Explicitly reports any timeline crops absent from this Kaggle source (`mustard`, `chickpea`, `potato`, etc.) in `models/kaggle_20k/evaluation_metrics.json`.
+- Holds out the official `Validation/` folder unchanged as the evaluation split when `Train/` and `Validation/` are present.
+
+## 2. Selective Download & Training Locally
 
 From the repository root:
 
-    python -m pip install -r requirements.txt
-    python -m pip install kaggle
-    python python/train_kaggle_dataset.py --download
+```bash
+python -m pip install -r requirements.txt
+python -m pip install kaggle six
+python python/train_kaggle_dataset.py --download --timeline
+```
 
-The download is extracted to data/kaggle_20k_crop_disease_images/. The raw images are ignored by Git and must not be pushed to this repository unless the dataset licence explicitly permits redistribution.
+When `--timeline` or `--crops` is supplied, `--download` uses selective HTTP Range extraction over the Kaggle archive so only the selected Rabi crop images (~1.15 GB for Wheat instead of the 2.51 GB full archive) are downloaded into `data/kaggle_20k_crop_disease_images/`.
 
+Useful flags:
+- Inspect the timeline resolution: `python python/rabi_timeline.py --mode roadmap`
+- Monthly disease-peak filter: `python python/train_kaggle_dataset.py --download --timeline-mode peak-month --as-of 2027-01-15`
+- Full dataset download fallback: `python python/train_kaggle_dataset.py --download --full-download`
 
-## 3. Run training directly from GitHub (no local Kaggle setup)
+If downloading privately or hitting rate limits, set `KAGGLE_API_TOKEN` (raw token or `kaggle.json` contents) — for the public CC0-1.0 dataset, anonymous selective range download also works automatically. Never commit `kaggle.json`, API tokens, or downloaded images to Git.
 
-The repository includes a manually triggered GitHub Actions workflow at .github/workflows/kaggle-training.yml.
+## 3. Fully Automated GitHub Actions Pipeline
 
-1. In your GitHub repository, open Settings > Secrets and variables > Actions.
-2. Select New repository secret.
-3. Set the name to KAGGLE_API_TOKEN and paste your Kaggle API token as the value. Generate/manage it at https://www.kaggle.com/settings/api. Do not paste the token into a commit, issue, or chat.
-4. Open the Actions tab in GitHub.
-5. Select "Kaggle dataset training", choose Run workflow, optionally enter crop prefixes, and start the run.
-6. When the job finishes, open its run page and download the artifact named rabi-crop-doctor-kaggle-training. It contains the trained research model and evaluation outputs when training succeeds.
+`.github/workflows/kaggle-training.yml` automates the complete selective download, training, evaluation summary, and artifact publishing process via:
+- **Monthly schedule (`cron: "30 2 1 * *"`)** aligned to `ROADMAP.md` milestones and Indian Rabi scouting months.
+- **Automatic `push` triggers** on `main` when `ROADMAP.md`, `data/rabi_crops_knowledge.json`, `data/rabi_field_incidence_india.csv`, `python/rabi_timeline.py`, `python/train_kaggle_dataset.py`, or `.github/workflows/kaggle-training.yml` change.
+- **Manual `workflow_dispatch`** with selectable `timeline_mode` (`roadmap`, `peak-month`, `all-rabi`, `custom`), `quarter`, `as_of`, `crops`, and `cv_folds`.
 
-The workflow uses GitHub-hosted CPU runners. It is not a GPU/CNN training job; it trains the current 28-feature Random Forest, RBF-SVM, MLP-ANN and soft-voting benchmark. GitHub Actions availability and runtime limits depend on your GitHub account and repository settings.
-
-## 4. Train locally
-
-The script scans nested class folders, uses official train/test folders when both are present, removes byte-identical duplicate files to reduce train/test leakage, extracts the project's deterministic 28 image features, and trains Random Forest, RBF-SVM, MLP-ANN, and a soft-voting probability ensemble.
-
-    python python/train_kaggle_dataset.py --dataset-dir data/kaggle_20k_crop_disease_images --output-dir models/kaggle_20k
-
-To train only on selected crop prefixes (the prefix is inferred from the class directory name):
-
-    python python/train_kaggle_dataset.py --download --crops wheat rice
-
-Do not assume the dataset contains the project's four existing crops or the same disease taxonomy. Inspect the discovered class counts and excluded/unpaired classes in the metrics before interpreting results.
-
-## 5. Outputs
-
-- models/kaggle_20k/trained_models.pkl — fitted sklearn models and scaler
-- models/kaggle_20k/evaluation_metrics.json — dataset provenance, class counts, split protocol, cross-validation and held-out metrics
-- models/kaggle_20k/held_out_predictions.csv — held-out true labels and model predictions
+Outputs uploaded in the `rabi-crop-doctor-kaggle-training` workflow artifact:
+- `models/kaggle_20k/trained_models.pkl` — fitted sklearn models and scaler
+- `models/kaggle_20k/evaluation_metrics.json` — timeline provenance, crop coverage, class counts, split protocol, CV and held-out metrics
+- `models/kaggle_20k/training_summary.md` — Markdown benchmark table (also published to the GitHub Actions run summary)
+- `models/kaggle_20k/held_out_predictions.csv` — held-out true labels and model predictions
 
 ## Important methodological notes
 
-- If the dataset supplies official train/test folders, the test folder is held out and not used for fitting or cross-validation.
-- If no official split exists, a stratified random split is used; report this clearly.
-- The duplicate audit detects byte-identical images only. It does not detect resized, recompressed, augmented, or near-duplicate images. For publication-grade evaluation, perform perceptual-hash and source/plant-level grouping where metadata permits.
-- The current feature extractor is a hand-engineered 28-dimensional descriptor, not an end-to-end CNN. Performance reflects this representation and should not be described as deep-learning performance.
-- A high random-split score does not establish field generalization. Prefer location-, season-, cultivar-, camera-, and plant-grouped external validation where source metadata supports it.
-- This dataset's labels are not automatically mapped to the Rabi Crop Doctor advisory knowledge base. Do not issue crop-specific treatment advice for a class unless its identity and agronomic meaning have been verified.
-- The separate model bundle is not wired into the Android/PWA classifier. Integrate it only after class mapping, independent validation, parity tests, bundle-size checks, and on-device latency tests.
+- `Validation/` is held out unchanged for final evaluation and never used for fitting or cross-validation.
+- Exact-duplicate hashing detects byte-identical images only, not near-duplicates or resized/recompressed copies.
+- The 28-dimensional descriptor is hand-engineered computer vision features, not an end-to-end CNN.
+- This separate research bundle does not overwrite `models/android_models.json` or `RabiCropDoctor.apk`.

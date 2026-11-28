@@ -27,6 +27,7 @@ from .disease_incidence import (
 from .feature_extractor import FEATURE_NAMES, extract_features_and_diagnostics
 from .generate_rabi_dataset import CLASSES
 from .predict_image import predict_leaf_image
+from .rabi_timeline import resolve_rabi_timeline
 from .train_and_evaluate import train_pipeline
 
 __version__ = "1.0.2"
@@ -38,6 +39,7 @@ __all__ = [
     "compute_field_survey_metrics",
     "extract_features_and_diagnostics",
     "predict_leaf_image",
+    "resolve_rabi_timeline",
     "severity_to_grade",
     "summarize_india_rabi_incidence",
     "train_pipeline",
