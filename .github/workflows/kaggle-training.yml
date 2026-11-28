@@ -33,21 +33,86 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
-          python -m pip install kaggle
+          python -m pip install kaggle six
+          kaggle --version
 
       - name: Download Kaggle dataset
         env:
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
         run: |
-          if [ -z "$KAGGLE_API_TOKEN" ]; then
+          set -euo pipefail
+          if [ -z "${KAGGLE_API_TOKEN//[[:space:]]/}" ]; then
             echo "::error::Add KAGGLE_API_TOKEN under repository Settings > Secrets and variables > Actions."
             exit 1
+          fi
+          AUTH_MODE=$(python - << 'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          raw = os.environ["KAGGLE_API_TOKEN"].strip()
+          if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in {"'", '"'}:
+              raw = raw[1:-1].strip()
+          kaggle_dir = Path.home() / ".kaggle"
+          kaggle_dir.mkdir(parents=True, exist_ok=True)
+          json_path = kaggle_dir / "kaggle.json"
+          token_path = kaggle_dir / "access_token"
+
+          if raw.startswith("{"):
+              try:
+                  payload = json.loads(raw)
+              except json.JSONDecodeError as exc:
+                  raise SystemExit(f"::error::KAGGLE_API_TOKEN is invalid JSON: {exc}")
+              if not isinstance(payload, dict):
+                  raise SystemExit("::error::JSON KAGGLE_API_TOKEN must be a JSON object.")
+              if payload.get("username") and payload.get("key"):
+                  json_path.write_text(
+                      json.dumps({
+                          "username": str(payload["username"]).strip(),
+                          "key": str(payload["key"]).strip(),
+                      }),
+                      encoding="utf-8",
+                  )
+                  os.chmod(json_path, 0o600)
+                  if token_path.exists():
+                      token_path.unlink()
+                  print("legacy_json")
+              elif payload.get("token") or payload.get("access_token"):
+                  token = str(payload.get("token") or payload.get("access_token")).strip()
+                  token_path.write_text(token, encoding="utf-8")
+                  os.chmod(token_path, 0o600)
+                  if json_path.exists():
+                      json_path.unlink()
+                  print("access_token")
+              else:
+                  raise SystemExit(
+                      "::error::JSON KAGGLE_API_TOKEN must contain 'username' and 'key' (or 'token')."
+                  )
+          else:
+              if raw.lower().startswith("bearer "):
+                  raw = raw[7:].strip()
+              token_path.write_text(raw, encoding="utf-8")
+              os.chmod(token_path, 0o600)
+              if json_path.exists():
+                  json_path.unlink()
+              print("access_token")
+          PY
+          )
+          if [ "$AUTH_MODE" = "legacy_json" ]; then
+            unset KAGGLE_API_TOKEN
+          else
+            export KAGGLE_API_TOKEN="$(cat ~/.kaggle/access_token)"
           fi
           mkdir -p data/kaggle_20k_crop_disease_images
           kaggle datasets download -d jawadali1045/20k-multi-class-crop-disease-images \
             -p data/kaggle_20k_crop_disease_images --unzip
-          find data/kaggle_20k_crop_disease_images -type f | head -40
-          echo "Downloaded image files: $(find data/kaggle_20k_crop_disease_images -type f | wc -l)"
+          IMAGE_COUNT=$(find data/kaggle_20k_crop_disease_images -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.bmp' -o -iname '*.webp' -o -iname '*.tif' -o -iname '*.tiff' \) | wc -l)
+          find data/kaggle_20k_crop_disease_images -type f | sort | awk 'NR<=40'
+          echo "Downloaded image files: $IMAGE_COUNT"
+          if [ "$IMAGE_COUNT" -eq 0 ]; then
+            echo "::error::No image files found under data/kaggle_20k_crop_disease_images after download."
+            exit 1
+          fi
 
       - name: Train and evaluate
         env:
@@ -55,8 +120,9 @@ jobs:
           CROPS: ${{ inputs.crops }}
           CV_FOLDS: ${{ inputs.cv_folds }}
         run: |
+          set -euo pipefail
           BASE_ARGS=(--dataset-dir data/kaggle_20k_crop_disease_images --output-dir models/kaggle_20k --cv-folds "$CV_FOLDS")
-          if [ -n "$CROPS" ]; then
+          if [ -n "${CROPS//[[:space:]]/}" ]; then
             read -r -a CROP_ARGS <<< "$CROPS"
             python python/train_kaggle_dataset.py "${BASE_ARGS[@]}" --crops "${CROP_ARGS[@]}"
           else
