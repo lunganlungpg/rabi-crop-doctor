@@ -154,11 +154,13 @@ def _download_dataset(destination: Path) -> None:
     has_legacy_credentials = bool(
         os.environ.get("KAGGLE_USERNAME") and os.environ.get("KAGGLE_KEY")
     )
+    has_api_token = bool(os.environ.get("KAGGLE_API_TOKEN"))
     config_path = Path(os.environ.get("KAGGLE_CONFIG_DIR", Path.home() / ".kaggle")) / "kaggle.json"
-    if not has_legacy_credentials and not config_path.exists():
+    access_token_path = Path(os.environ.get("KAGGLE_CONFIG_DIR", Path.home() / ".kaggle")) / "access_token"
+    if not (has_api_token or has_legacy_credentials or config_path.exists() or access_token_path.exists()):
         raise RuntimeError(
-            "Kaggle credentials are missing. Configure KAGGLE_USERNAME and KAGGLE_KEY "
-            "environment variables or place kaggle.json in ~/.kaggle/."
+            "Kaggle credentials are missing. Set KAGGLE_API_TOKEN, configure "
+            "KAGGLE_USERNAME and KAGGLE_KEY, or place Kaggle credentials under ~/.kaggle/."
         )
     destination.mkdir(parents=True, exist_ok=True)
     command = [
