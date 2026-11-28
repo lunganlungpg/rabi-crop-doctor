@@ -2,6 +2,8 @@ import os
 import subprocess
 import zipfile
 
+import shutil
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 APP1_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
 APK_PATH = os.path.join(BASE_DIR, "RabiCropDoctor.apk")
@@ -9,7 +11,21 @@ SDK_DIR = r"C:\Users\lungh\AppData\Local\Android\Sdk"
 BUILD_TOOLS = os.path.join(SDK_DIR, "build-tools", "35.0.1")
 AAPT = os.path.join(BUILD_TOOLS, "aapt.exe")
 APKSIGNER = os.path.join(BUILD_TOOLS, "apksigner.bat")
-JDK_DIR = os.path.join(APP1_DIR, "jdk-17", "jdk-17.0.12+7")
+
+
+def _resolve_jdk_dir():
+    for cand in [
+        os.environ.get("JAVA_HOME", ""),
+        os.path.join(APP1_DIR, "jdk-17", "jdk-17.0.12+7"),
+        r"C:\Users\lungh\.p2\pool\plugins\org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_21.0.10.v20260205-0638\jre",
+    ]:
+        if cand and os.path.exists(os.path.join(cand, "bin", "java.exe")):
+            return cand
+    java = shutil.which("java")
+    return os.path.dirname(os.path.dirname(java)) if java else os.path.join(APP1_DIR, "jdk-17", "jdk-17.0.12+7")
+
+
+JDK_DIR = _resolve_jdk_dir()
 
 
 def main():
@@ -31,6 +47,7 @@ def main():
         "assets/js/feature_extractor.js",
         "assets/js/inference_engine.js",
         "assets/js/models_data.js",
+        "assets/js/ai_vision.js",
         "assets/js/app.js",
         "res/drawable/ic_launcher.xml",
         "res/mipmap-anydpi-v26/ic_launcher.xml",

@@ -252,7 +252,7 @@ public class MainActivity extends Activity {
     private void sendBitmapToJs(Bitmap bmp) {
         int w = bmp.getWidth();
         int h = bmp.getHeight();
-        float scale = Math.min(1.0f, 384.0f / Math.max(w, h));
+        float scale = Math.min(1.0f, 768.0f / Math.max(w, h));
         Bitmap finalBmp = bmp;
         if (scale < 1.0f) {
             finalBmp = Bitmap.createScaledBitmap(bmp, Math.round(w * scale), Math.round(h * scale), true);

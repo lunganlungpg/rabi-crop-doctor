@@ -2,7 +2,8 @@
  * app.js
  * ------
  * Interactive bilingual (English / Hindi) Rabi Crop Doctor controller.
- * Manages leaf scanning, native Android camera/gallery bridges, offline ML & ANN inference,
+ * Manages leaf scanning, native Android camera/gallery bridges, optional multi-model
+ * Google Gemini AI Vision checking & advisory, instant offline ML & ANN inference fallback,
  * plot-level Disease Incidence / Wheeler PDI survey persistence, and India Rabi surveillance guide.
  */
 (function () {
@@ -13,26 +14,45 @@
   let selectedCrop = "all";
   let currentScan = null;
   let surveyItems = [];
+  let aiConfig = window.RabiAIVision ? window.RabiAIVision.loadConfig() : {
+    enabled: false,
+    apiKey: "",
+    rememberKey: true,
+    selectedModels: ["gemini-2.5-flash"],
+    customModels: [],
+    discoveredModels: [],
+  };
 
   const UI_TEXT = {
     en: {
       appTitle: "Rabi Crop Doctor",
-      appSub: "Free Offline ML + ANN Crop Advisory",
+      appSub: "Hybrid Gemini AI + Offline ML/ANN Crop Advisory",
       langBtn: "🇮🇳 हिन्दी",
       step1: "1. Select Your Rabi Crop (Recommended)",
       step2: "2. Take or Choose Leaf Photo",
       btnCam: "📷 Take Photo",
       btnGal: "🖼️ Gallery",
-      samplesLbl: "Or tap a sample Rabi leaf to test offline:",
+      samplesLbl: "Or tap a sample Rabi leaf to test:",
+      aiTitle: "🤖 Gemini AI Vision Check (Optional)",
+      aiEnable: "Verify photo & diagnose via Gemini AI API (auto offline fallback)",
+      aiSummary: "⚙️ API Key & Multi-Model Selection",
+      aiKeyLbl: "Your Gemini API Key (stored only on this device):",
+      aiRemember: "Remember key on this device",
+      aiVerifyBtn: "🔄 Verify Key & Load Live Models",
+      aiModelsLbl: "Select 1 or more AI models (multi-model consensus):",
+      aiLabTitle: "🤖 Cloud Gemini AI Vision Model Comparison",
+      aiLabSub: "Live per-model responses from the Gemini models you selected for the current leaf image.",
+      recheckAi: "🤖 Re-check Current Photo with Gemini AI",
       noLeafTitle: "Leaf Not Clearly Detected",
       noLeafDesc:
-        "Please hold one leaf near the center of the frame in bright daylight and try again.",
+        "Please hold one leaf near the center of the frame in bright daylight and try again (or connect a Gemini API key above for full-scene AI inspection).",
       capOrig: "Original Leaf",
       capHeat: "AI Lesion Map",
       modelAgree: "Hybrid ML + ANN Consensus Confidence",
+      aiAgree: "Gemini AI Consensus Confidence",
       advisoryTitle: "Field Action & IPM Advisory",
       addSurvey: "➕ Add to Field Survey",
-      viewLab: "🔬 View ML vs ANN",
+      viewLab: "🔬 View AI & Models",
       surveyTitle: "Plot Disease Incidence & PDI Calculator",
       surveyDesc:
         "Inspect 5–20 leaves in a W-pattern across your plot to compute Disease Incidence (%) and Wheeler Percent Disease Index (PDI).",
@@ -47,7 +67,7 @@
       guideHot: "India Rabi Disease Incidence Surveillance",
       nav_scan: "Scan Leaf",
       nav_survey: "Survey",
-      nav_lab: "ML vs ANN",
+      nav_lab: "AI & Models",
       nav_guide: "Rabi Guide",
       crop_all: "Auto Detect",
       crop_wheat: "Wheat",
@@ -61,22 +81,33 @@
     },
     hi: {
       appTitle: "फसल मित्र (रबी डॉक्टर)",
-      appSub: "निःशुल्क ऑफ़लाइन AI फसल रोग जांच",
+      appSub: "जेमिनी AI + ऑफ़लाइन ML/ANN फसल रोग जांच",
       langBtn: "🌐 English",
       step1: "1. अपनी रबी फसल चुनें (सटीकता के लिए)",
       step2: "2. पत्ती की फोटो लें या चुनें",
       btnCam: "📷 कैमरा खोलें",
       btnGal: "🖼️ गैलरी चुनें",
       samplesLbl: "या जांचने के लिए नीचे दिए नमूने पर टैप करें:",
+      aiTitle: "🤖 जेमिनी AI विज़न जांच (वैकल्पिक)",
+      aiEnable: "जेमिनी AI API से फोटो जांचें व सलाह लें (ऑफ़लाइन होने पर स्वतः स्थानीय मॉडल चलेगा)",
+      aiSummary: "⚙️ API कुंजी और मल्टी-मॉडल चयन",
+      aiKeyLbl: "आपकी जेमिनी API कुंजी (केवल इसी डिवाइस पर सुरक्षित):",
+      aiRemember: "इस डिवाइस पर कुंजी याद रखें",
+      aiVerifyBtn: "🔄 कुंजी जांचें व लाइव मॉडल लोड करें",
+      aiModelsLbl: "1 या अधिक AI मॉडल चुनें (मल्टी-मॉडल सहमति):",
+      aiLabTitle: "🤖 क्लाउड जेमिनी AI मॉडल तुलना",
+      aiLabSub: "वर्तमान फोटो पर आपके द्वारा चुने गए सभी जेमिनी मॉडल के परिणाम।",
+      recheckAi: "🤖 जेमिनी AI से वर्तमान फोटो दोबारा जांचें",
       noLeafTitle: "पत्ती स्पष्ट नहीं दिखी",
       noLeafDesc:
-        "कृपया दिन की साफ रोशनी में एक पत्ती को कैमरे के बीच में रखकर दोबारा फोटो लें।",
+        "कृपया दिन की साफ रोशनी में एक पत्ती को कैमरे के बीच में रखकर दोबारा फोटो लें (या ऊपर जेमिनी API कुंजी जोड़ें)।",
       capOrig: "असली पत्ती",
       capHeat: "AI रोग मानचित्र",
       modelAgree: "ML + ANN संयुक्त विश्वसनीयता",
+      aiAgree: "जेमिनी AI सहमति विश्वसनीयता",
       advisoryTitle: "खेत के लिए बचाव व उपचार सलाह",
       addSurvey: "➕ खेत सर्वेक्षण में जोड़ें",
-      viewLab: "🔬 ML बनाम ANN देखें",
+      viewLab: "🔬 AI व मॉडल तुलना देखें",
       surveyTitle: "खेत रोग प्रकोप (%) एवं PDI कैलकुलेटर",
       surveyDesc:
         "अपने खेत में W-आकार में 5–20 पत्तियों की जांच जोड़कर कुल रोग प्रकोप और तीव्रता सूचकांक (PDI) निकालें।",
@@ -91,7 +122,7 @@
       guideHot: "भारत के प्रमुख रबी रोग प्रकोप क्षेत्र",
       nav_scan: "जांच करें",
       nav_survey: "सर्वेक्षण",
-      nav_lab: "ML व ANN",
+      nav_lab: "AI व मॉडल",
       nav_guide: "रोग गाइड",
       crop_all: "स्वतः पहचान",
       crop_wheat: "गेहूँ",
@@ -111,7 +142,7 @@
 
   function findClassInfo(clsId) {
     const classes = getBundle().knowledge.classes;
-    return classes.find((c) => c.id === clsId) || classes[0];
+    return classes.find((c) => c.id === clsId) || null;
   }
 
   function showToast(msg) {
@@ -120,6 +151,119 @@
     } else {
       console.log("[Toast]", msg);
     }
+  }
+
+  function isAiReady() {
+    return Boolean(
+      window.RabiAIVision &&
+        aiConfig.enabled &&
+        String(aiConfig.apiKey || "").trim().length > 0 &&
+        Array.isArray(aiConfig.selectedModels) &&
+        aiConfig.selectedModels.length > 0
+    );
+  }
+
+  function getAllSelectableModels() {
+    if (!window.RabiAIVision) return [];
+    const byId = new Map();
+    window.RabiAIVision.DEFAULT_MODELS.forEach((m) => byId.set(m.id, { ...m }));
+    (aiConfig.discoveredModels || []).forEach((m) => {
+      if (!byId.has(m.id)) {
+        byId.set(m.id, { id: m.id, label: m.label || m.id, tier: "live" });
+      }
+    });
+    (aiConfig.customModels || []).forEach((id) => {
+      const clean = window.RabiAIVision.normalizeModelId(id);
+      if (clean && !byId.has(clean)) {
+        byId.set(clean, { id: clean, label: `${clean} (Custom)`, tier: "custom" });
+      }
+    });
+    (aiConfig.selectedModels || []).forEach((id) => {
+      const clean = window.RabiAIVision.normalizeModelId(id);
+      if (clean && !byId.has(clean)) {
+        byId.set(clean, { id: clean, label: clean, tier: "custom" });
+      }
+    });
+    return Array.from(byId.values());
+  }
+
+  function persistAiConfig() {
+    if (window.RabiAIVision) {
+      window.RabiAIVision.saveConfig(aiConfig);
+    }
+    updateAiStatusUI();
+  }
+
+  function updateAiStatusUI() {
+    const pill = document.getElementById("ai-status-pill");
+    const recheckBtn = document.getElementById("btn-recheck-ai");
+    const hasKey = String(aiConfig.apiKey || "").trim().length > 0;
+    const count = (aiConfig.selectedModels || []).length;
+
+    if (pill) {
+      if (aiConfig.enabled && hasKey) {
+        pill.className = "pill-tag pill-safe";
+        pill.textContent =
+          currentLang === "hi"
+            ? `🔑 कुंजी सेट · ${count} मॉडल`
+            : `🔑 AI Ready · ${count} Model${count === 1 ? "" : "s"}`;
+      } else if (aiConfig.enabled && !hasKey) {
+        pill.className = "pill-tag pill-watch";
+        pill.textContent =
+          currentLang === "hi" ? "कुंजी डालें (ऑफ़लाइन सक्रिय)" : "Add Key (Offline Active)";
+      } else {
+        pill.className = "pill-tag pill-safe";
+        pill.textContent = currentLang === "hi" ? "ऑफ़लाइन ML+ANN" : "Offline ML+ANN";
+      }
+    }
+
+    if (recheckBtn) {
+      if (currentScan && isAiReady()) {
+        recheckBtn.classList.remove("hidden");
+      } else {
+        recheckBtn.classList.add("hidden");
+      }
+    }
+  }
+
+  function renderAiModelsGrid() {
+    const container = document.getElementById("ai-models-list");
+    if (!container) return;
+    const models = getAllSelectableModels();
+    const selectedSet = new Set(aiConfig.selectedModels || []);
+    container.innerHTML = "";
+
+    models.forEach((m) => {
+      const isChecked = selectedSet.has(m.id);
+      const label = document.createElement("label");
+      label.className = "ai-model-chip" + (isChecked ? " checked" : "");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = isChecked;
+      checkbox.value = m.id;
+      checkbox.addEventListener("change", () => {
+        const next = new Set(aiConfig.selectedModels || []);
+        if (checkbox.checked) {
+          next.add(m.id);
+        } else if (next.size > 1) {
+          next.delete(m.id);
+        } else {
+          checkbox.checked = true;
+          showToast(currentLang === "hi" ? "कम से कम 1 मॉडल चुना होना चाहिए।" : "Select at least 1 Gemini model.");
+          return;
+        }
+        aiConfig.selectedModels = Array.from(next);
+        label.classList.toggle("checked", checkbox.checked);
+        persistAiConfig();
+      });
+
+      const meta = document.createElement("span");
+      const safeTitle = m.label.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      meta.innerHTML = `<strong>${safeTitle}</strong><code>${m.id}</code>`;
+      label.appendChild(checkbox);
+      label.appendChild(meta);
+      container.appendChild(label);
+    });
   }
 
   function applyLanguage() {
@@ -132,11 +276,20 @@
     document.getElementById("btn-camera").textContent = t.btnCam;
     document.getElementById("btn-gallery").textContent = t.btnGal;
     document.getElementById("lbl-samples").textContent = t.samplesLbl;
+    document.getElementById("lbl-ai-title").textContent = t.aiTitle;
+    document.getElementById("lbl-ai-enable").textContent = t.aiEnable;
+    document.getElementById("lbl-ai-summary").textContent = t.aiSummary;
+    document.getElementById("lbl-ai-key").textContent = t.aiKeyLbl;
+    document.getElementById("lbl-ai-remember").textContent = t.aiRemember;
+    document.getElementById("btn-ai-verify").textContent = t.aiVerifyBtn;
+    document.getElementById("lbl-ai-models").textContent = t.aiModelsLbl;
+    document.getElementById("lbl-ai-lab-title").textContent = t.aiLabTitle;
+    document.getElementById("lbl-ai-lab-sub").textContent = t.aiLabSub;
+    document.getElementById("btn-recheck-ai").textContent = t.recheckAi;
     document.getElementById("lbl-noleaf-title").textContent = t.noLeafTitle;
     document.getElementById("lbl-noleaf-desc").textContent = t.noLeafDesc;
     document.getElementById("cap-orig").textContent = t.capOrig;
     document.getElementById("cap-heat").textContent = t.capHeat;
-    document.getElementById("lbl-model-agree").textContent = t.modelAgree;
     document.getElementById("lbl-advisory").textContent = t.advisoryTitle;
     document.getElementById("btn-add-survey").textContent = t.addSurvey;
     document.getElementById("btn-goto-lab").textContent = t.viewLab;
@@ -156,6 +309,7 @@
       if (t[k]) el.textContent = t[k];
     });
 
+    updateAiStatusUI();
     renderSampleStrip();
     if (currentScan) renderScanResult(currentScan);
     renderSurvey();
@@ -168,7 +322,7 @@
     const samples = getBundle().samples;
     samples.forEach((smp) => {
       if (selectedCrop !== "all" && smp.crop !== selectedCrop) return;
-      const clsInfo = findClassInfo(smp.id);
+      const clsInfo = findClassInfo(smp.id) || getBundle().knowledge.classes[0];
       const pill = document.createElement("button");
       pill.type = "button";
       pill.className = "sample-pill";
@@ -179,7 +333,42 @@
     });
   }
 
-  function analyzeImageUrl(dataUrl) {
+  async function runAiInspectionForScan(scan) {
+    if (!isAiReady() || !scan) return;
+    scan.aiPending = true;
+    scan.aiError = null;
+    renderScanResult(scan);
+
+    try {
+      const knownClasses = getBundle().knowledge.classes.map((c) => c.id);
+      const outcome = await window.RabiAIVision.analyzeLeafMultiModel({
+        apiKey: aiConfig.apiKey,
+        models: aiConfig.selectedModels,
+        dataUrl: scan.dataUrl,
+        cropHint: selectedCrop,
+        knownClasses,
+      });
+      if (currentScan !== scan) return;
+      scan.aiPending = false;
+      scan.ai = outcome;
+      if (!outcome.consensus) {
+        const errs = outcome.results
+          .filter((r) => !r.ok)
+          .map((r) => `${r.modelId}: ${r.error}`)
+          .join(" | ");
+        scan.aiError = errs || "AI check failed; showing offline ML+ANN fallback.";
+      }
+      renderScanResult(scan);
+    } catch (err) {
+      if (currentScan !== scan) return;
+      scan.aiPending = false;
+      scan.aiError = err && err.message ? err.message : String(err);
+      renderScanResult(scan);
+    }
+  }
+
+  function analyzeImageUrl(dataUrl, options) {
+    const opts = options || {};
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
@@ -195,7 +384,8 @@
         128
       );
 
-      if (!diag.leafDetected) {
+      const willRunAi = !opts.skipAi && isAiReady();
+      if (!diag.leafDetected && !willRunAi) {
         document.getElementById("card-no-leaf").classList.remove("hidden");
         document.getElementById("card-result").classList.add("hidden");
         return;
@@ -210,20 +400,28 @@
         selectedCrop
       );
 
-      currentScan = {
+      const scan = {
         dataUrl,
         diag,
         inference,
         cropFilterAtScan: selectedCrop,
         timestamp: new Date().toISOString(),
+        ai: null,
+        aiPending: false,
+        aiError: null,
       };
+      currentScan = scan;
+      renderScanResult(scan);
 
-      renderScanResult(currentScan);
+      if (willRunAi) {
+        runAiInspectionForScan(scan);
+      }
     };
     img.src = dataUrl;
   }
 
   function renderScanResult(scan) {
+    const t = UI_TEXT[currentLang];
     const previewImg = document.getElementById("img-input-preview");
     previewImg.src = scan.dataUrl;
 
@@ -232,7 +430,16 @@
     const hImgData = new ImageData(scan.diag.overlayRGBA, 128, 128);
     hCtx.putImageData(hImgData, 0, 0);
 
-    // Always evaluate with current crop selection so user can switch crop filter live!
+    const loadingBar = document.getElementById("ai-loading-bar");
+    if (loadingBar) {
+      loadingBar.classList.toggle("hidden", !scan.aiPending);
+      loadingBar.textContent =
+        currentLang === "hi"
+          ? `⏳ चुने गए ${aiConfig.selectedModels.length} जेमिनी AI मॉडल से फोटो की जांच हो रही है...`
+          : `⏳ Checking image across ${aiConfig.selectedModels.length} selected Gemini AI model(s)...`;
+    }
+
+    // Always evaluate offline inference with current crop selection
     const inference = window.RabiInferenceEngine.predictAllModels(
       scan.diag.features,
       getBundle().models,
@@ -240,39 +447,123 @@
     );
     scan.inference = inference;
 
-    const ensWinner = inference.predictions.hybrid_ensemble;
-    const clsInfo = findClassInfo(ensWinner.className);
-    const confPct = Math.round(ensWinner.confidence * 1000) / 10;
-    const sevPct = clsInfo.is_healthy ? 0.0 : scan.diag.estimatedSeverityPct;
-    const grade = clsInfo.is_healthy ? 0 : scan.diag.severityGrade;
+    const aiConsensus = scan.ai && scan.ai.consensus ? scan.ai.consensus : null;
+    const sourceBadge = document.getElementById("badge-diag-source");
+    const reasoningEl = document.getElementById("diag-ai-reasoning");
+    const errorEl = document.getElementById("ai-error-box");
+
+    if (errorEl) {
+      if (scan.aiError) {
+        errorEl.classList.remove("hidden");
+        errorEl.textContent =
+          (currentLang === "hi" ? "⚠️ AI API त्रुटि (ऑफ़लाइन परिणाम दिखाया गया): " : "⚠️ Gemini AI error (showing offline fallback): ") +
+          scan.aiError;
+      } else {
+        errorEl.classList.add("hidden");
+      }
+    }
+
+    let isHealthy = false;
+    let sevPct = 0;
+    let grade = 0;
+    let confPct = 0;
+    let titleText = "";
+    let pathogenText = "";
+    let symptomsText = "";
+    let actions = [];
+
+    if (aiConsensus) {
+      if (sourceBadge) {
+        sourceBadge.className = "pill-tag pill-safe";
+        sourceBadge.textContent =
+          currentLang === "hi"
+            ? `🤖 जेमिनी AI सहमति (${aiConsensus.agreementCount}/${aiConsensus.totalModelsSucceeded} मॉडल)`
+            : `🤖 Gemini AI Consensus (${aiConsensus.agreementCount}/${aiConsensus.totalModelsSucceeded} Model${aiConsensus.totalModelsSucceeded === 1 ? "" : "s"})`;
+      }
+
+      if (!aiConsensus.isPlantLeaf) {
+        isHealthy = false;
+        sevPct = 0;
+        grade = 0;
+        confPct = aiConsensus.confidencePct;
+        titleText = currentLang === "hi" ? "पत्ती या फसल स्पष्ट नहीं मिली" : "Not Clearly a Crop Leaf";
+        pathogenText = aiConsensus.imageQualityNote || "AI image verification";
+        symptomsText = currentLang === "hi" ? aiConsensus.symptomsHi : aiConsensus.symptomsEn;
+        actions = currentLang === "hi" ? aiConsensus.actionHi : aiConsensus.actionEn;
+      } else {
+        isHealthy = aiConsensus.isHealthy;
+        sevPct = aiConsensus.estimatedSeverityPct;
+        grade = aiConsensus.severityGrade;
+        confPct = aiConsensus.confidencePct;
+        const kbMatch = findClassInfo(aiConsensus.canonicalClassId);
+        titleText = currentLang === "hi"
+          ? aiConsensus.diagnosisHi || (kbMatch ? kbMatch.name_hi : aiConsensus.canonicalClassId)
+          : aiConsensus.diagnosisEn || (kbMatch ? kbMatch.name_en : aiConsensus.canonicalClassId);
+        pathogenText = aiConsensus.pathogen || (kbMatch ? kbMatch.pathogen : "");
+        symptomsText =
+          (currentLang === "hi" ? aiConsensus.symptomsHi : aiConsensus.symptomsEn) ||
+          (kbMatch ? (currentLang === "hi" ? kbMatch.symptoms_hi : kbMatch.symptoms_en) : "");
+        actions =
+          (currentLang === "hi" ? aiConsensus.actionHi : aiConsensus.actionEn) ||
+          (kbMatch ? (currentLang === "hi" ? kbMatch.action_hi : kbMatch.action_en) : []);
+      }
+
+      if (reasoningEl) {
+        if (aiConsensus.reasoningEn) {
+          reasoningEl.classList.remove("hidden");
+          reasoningEl.textContent = `AI Verification (${aiConsensus.modelId}): ${aiConsensus.reasoningEn}`;
+        } else {
+          reasoningEl.classList.add("hidden");
+        }
+      }
+      document.getElementById("lbl-model-agree").textContent = t.aiAgree;
+    } else {
+      const ensWinner = inference.predictions.hybrid_ensemble;
+      const clsInfo = findClassInfo(ensWinner.className) || getBundle().knowledge.classes[0];
+      isHealthy = Boolean(clsInfo.is_healthy);
+      confPct = Math.round(ensWinner.confidence * 1000) / 10;
+      sevPct = isHealthy ? 0.0 : scan.diag.estimatedSeverityPct;
+      grade = isHealthy ? 0 : scan.diag.severityGrade;
+      titleText = currentLang === "hi" ? clsInfo.name_hi : clsInfo.name_en;
+      pathogenText = clsInfo.pathogen;
+      symptomsText = currentLang === "hi" ? clsInfo.symptoms_hi : clsInfo.symptoms_en;
+      actions = currentLang === "hi" ? clsInfo.action_hi : clsInfo.action_en;
+
+      if (sourceBadge) {
+        sourceBadge.className = "pill-tag pill-watch";
+        sourceBadge.textContent = scan.aiPending
+          ? (currentLang === "hi" ? "⏳ AI जांच जारी (ऑफ़लाइन पूर्वावलोकन)" : "⏳ Checking AI (Offline Preview)")
+          : (currentLang === "hi" ? "📴 ऑफ़लाइन ML + ANN मॉडल" : "📴 Offline ML + ANN Model");
+      }
+      if (reasoningEl) reasoningEl.classList.add("hidden");
+      document.getElementById("lbl-model-agree").textContent = t.modelAgree;
+    }
 
     const banner = document.getElementById("diag-banner");
     banner.className = "diag-banner";
-    if (!clsInfo.is_healthy) {
+    if (aiConsensus && !aiConsensus.isPlantLeaf) {
+      banner.classList.add("watch");
+    } else if (!isHealthy) {
       banner.classList.add(grade >= 2 ? "diseased" : "watch");
     }
 
-    document.getElementById("diag-name").textContent =
-      currentLang === "hi" ? clsInfo.name_hi : clsInfo.name_en;
-    document.getElementById("diag-pathogen").textContent = clsInfo.pathogen;
+    document.getElementById("diag-name").textContent = titleText;
+    document.getElementById("diag-pathogen").textContent = pathogenText;
     document.getElementById("badge-conf").textContent =
       (currentLang === "hi" ? "सटीकता: " : "Confidence: ") + `${confPct}%`;
     document.getElementById("badge-sev").textContent =
       (currentLang === "hi" ? "संक्रमण: " : "Lesion Area: ") + `${sevPct}%`;
     document.getElementById("badge-grade").textContent =
       (currentLang === "hi" ? "ग्रेड: " : "Scale: ") + `${grade} / 5`;
-
-    document.getElementById("diag-symptoms").textContent =
-      currentLang === "hi" ? clsInfo.symptoms_hi : clsInfo.symptoms_en;
+    document.getElementById("diag-symptoms").textContent = symptomsText;
 
     document.getElementById("lbl-conf-pct").textContent = `${confPct}%`;
     const fill = document.getElementById("bar-conf-fill");
     fill.style.width = `${Math.min(100, confPct)}%`;
-    fill.className = "bar-fill" + (clsInfo.is_healthy ? "" : " warn");
+    fill.className = "bar-fill" + (isHealthy ? "" : " warn");
 
     const advList = document.getElementById("advisory-list");
     advList.innerHTML = "";
-    const actions = currentLang === "hi" ? clsInfo.action_hi : clsInfo.action_en;
     actions.forEach((step) => {
       const li = document.createElement("li");
       li.textContent = step;
@@ -284,10 +575,51 @@
       `<strong>📞 Kisan Call Centre: ${helpline.kisan_call_centre}</strong><br/>` +
       (currentLang === "hi" ? helpline.note_hi : helpline.note_en);
 
+    updateAiStatusUI();
     renderLiveLab(scan);
   }
 
   function renderLiveLab(scan) {
+    const aiCard = document.getElementById("card-ai-lab");
+    const aiBars = document.getElementById("ai-model-bars");
+    if (aiCard && aiBars) {
+      if (scan && scan.ai && Array.isArray(scan.ai.results) && scan.ai.results.length > 0) {
+        aiCard.classList.remove("hidden");
+        aiBars.innerHTML = "";
+        scan.ai.results.forEach((r) => {
+          const card = document.createElement("div");
+          card.className = "ai-model-card";
+          if (!r.ok) {
+            card.innerHTML = `
+              <div class="bar-label">
+                <span><code>${r.modelId}</code></span>
+                <span class="pill-tag pill-critical">Error</span>
+              </div>
+              <div class="muted">${String(r.error || "Request failed")}</div>
+            `;
+          } else {
+            const title = currentLang === "hi" ? r.diagnosisHi : r.diagnosisEn;
+            const sevLabel = r.isHealthy ? "0%" : `${r.estimatedSeverityPct}% (G${r.severityGrade})`;
+            card.innerHTML = `
+              <div class="bar-label">
+                <span><code>${r.modelId}</code> · ${r.latencyMs} ms</span>
+                <span><strong>${title}</strong> (${r.confidencePct}%)</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill ann" style="width:${Math.min(100, r.confidencePct)}%"></div>
+              </div>
+              <div class="muted" style="margin-top:4px; font-size:0.76rem;">
+                Crop: <strong>${r.detectedCrop}</strong> · Class: <code>${r.canonicalClassId}</code> · Severity: <strong>${sevLabel}</strong>
+              </div>
+            `;
+          }
+          aiBars.appendChild(card);
+        });
+      } else {
+        aiCard.classList.add("hidden");
+      }
+    }
+
     const container = document.getElementById("live-model-bars");
     if (!scan) return;
 
@@ -302,7 +634,7 @@
     container.innerHTML = "";
     modelOrder.forEach(([key, label, barCls]) => {
       const pred = scan.inference.predictions[key];
-      const info = findClassInfo(pred.className);
+      const info = findClassInfo(pred.className) || getBundle().knowledge.classes[0];
       const pct = Math.round(pred.confidence * 1000) / 10;
       const clsLabel = currentLang === "hi" ? info.name_hi : info.name_en;
 
@@ -320,7 +652,6 @@
       container.appendChild(row);
     });
 
-    // Display key pathological telemetry features
     const f = scan.diag.features;
     const fNames = window.RabiFeatureExtractor.FEATURE_NAMES;
     const highlightIndices = [12, 13, 14, 15, 16, 17, 20, 22, 6, 24, 25, 27];
@@ -369,7 +700,14 @@
   function computeSurveyStats() {
     const n = surveyItems.length;
     if (n === 0) {
-      return { total: 0, infected: 0, incidence: 0, pdi: 0, statusClass: "", statusText: currentLang === "hi" ? "अभी कोई पत्ती दर्ज नहीं है।" : "No scans recorded yet." };
+      return {
+        total: 0,
+        infected: 0,
+        incidence: 0,
+        pdi: 0,
+        statusClass: "",
+        statusText: currentLang === "hi" ? "अभी कोई पत्ती दर्ज नहीं है।" : "No scans recorded yet.",
+      };
     }
     let infected = 0;
     let ratingSum = 0;
@@ -418,7 +756,10 @@
     tbody.innerHTML = "";
     surveyItems.forEach((item, idx) => {
       const info = findClassInfo(item.classId);
-      const name = currentLang === "hi" ? info.name_hi : info.name_en;
+      const name =
+        currentLang === "hi"
+          ? item.nameHi || (info ? info.name_hi : item.classId)
+          : item.nameEn || (info ? info.name_en : item.classId);
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${idx + 1}</td>
@@ -438,19 +779,43 @@
 
   function addCurrentScanToSurvey() {
     if (!currentScan) return;
-    const win = currentScan.inference.predictions.hybrid_ensemble;
-    const info = findClassInfo(win.className);
-    const isH = Boolean(info.is_healthy);
-    const sev = isH ? 0 : currentScan.diag.estimatedSeverityPct;
-    const gr = isH ? 0 : Math.max(1, currentScan.diag.severityGrade);
-    surveyItems.push({
-      classId: win.className,
-      isHealthy: isH,
-      severityPct: sev,
-      grade: gr,
-      confidencePct: Math.round(win.confidence * 1000) / 10,
-      timestamp: currentScan.timestamp,
-    });
+    const aiCons = currentScan.ai && currentScan.ai.consensus && currentScan.ai.consensus.isPlantLeaf
+      ? currentScan.ai.consensus
+      : null;
+
+    if (aiCons) {
+      const isH = Boolean(aiCons.isHealthy);
+      const sev = isH ? 0 : aiCons.estimatedSeverityPct;
+      const gr = isH ? 0 : Math.max(1, aiCons.severityGrade);
+      surveyItems.push({
+        classId: aiCons.canonicalClassId,
+        nameEn: aiCons.diagnosisEn,
+        nameHi: aiCons.diagnosisHi,
+        isHealthy: isH,
+        severityPct: sev,
+        grade: gr,
+        confidencePct: aiCons.confidencePct,
+        source: "gemini_ai",
+        timestamp: currentScan.timestamp,
+      });
+    } else {
+      const win = currentScan.inference.predictions.hybrid_ensemble;
+      const info = findClassInfo(win.className) || getBundle().knowledge.classes[0];
+      const isH = Boolean(info.is_healthy);
+      const sev = isH ? 0 : currentScan.diag.estimatedSeverityPct;
+      const gr = isH ? 0 : Math.max(1, currentScan.diag.severityGrade);
+      surveyItems.push({
+        classId: win.className,
+        nameEn: info.name_en,
+        nameHi: info.name_hi,
+        isHealthy: isH,
+        severityPct: sev,
+        grade: gr,
+        confidencePct: Math.round(win.confidence * 1000) / 10,
+        source: "offline_ml_ann",
+        timestamp: currentScan.timestamp,
+      });
+    }
     saveSurveyToStorage();
     renderSurvey();
     showToast(currentLang === "hi" ? "खेत सर्वेक्षण में जोड़ा गया!" : "Added to Field Incidence Survey!");
@@ -516,12 +881,13 @@
 
   function buildCsvContent() {
     const stats = computeSurveyStats();
-    let csv = "index,class_id,disease_name,healthy,severity_pct,grade_0_5,confidence_pct,timestamp\n";
+    let csv = "index,class_id,disease_name,healthy,severity_pct,grade_0_5,confidence_pct,source,timestamp\n";
     surveyItems.forEach((it, idx) => {
       const info = findClassInfo(it.classId);
-      csv += `${idx + 1},${it.classId},"${info.name_en}",${it.isHealthy},${it.severityPct},${it.grade},${it.confidencePct},${it.timestamp}\n`;
+      const name = it.nameEn || (info ? info.name_en : it.classId);
+      csv += `${idx + 1},${it.classId},"${name}",${it.isHealthy},${it.severityPct},${it.grade},${it.confidencePct},${it.source || "offline_ml_ann"},${it.timestamp}\n`;
     });
-    csv += `\nSUMMARY,Total=${stats.total},Incidence=${stats.incidence}%,PDI=${stats.pdi}%,,,,\n`;
+    csv += `\nSUMMARY,Total=${stats.total},Incidence=${stats.incidence}%,PDI=${stats.pdi}%,,,,,\n`;
     return csv;
   }
 
@@ -532,9 +898,99 @@
     }
   };
 
+  function setupAiSettingsControls() {
+    const chkEnabled = document.getElementById("chk-ai-enabled");
+    const inpKey = document.getElementById("input-ai-key");
+    const chkRemember = document.getElementById("chk-ai-remember");
+    const btnVis = document.getElementById("btn-toggle-key-vis");
+    const btnClear = document.getElementById("btn-clear-ai-key");
+    const btnVerify = document.getElementById("btn-ai-verify");
+    const verifyStatus = document.getElementById("ai-verify-status");
+    const inpCustom = document.getElementById("input-custom-model");
+    const btnAddCustom = document.getElementById("btn-add-custom-model");
+
+    if (chkEnabled) {
+      chkEnabled.checked = aiConfig.enabled;
+      chkEnabled.addEventListener("change", () => {
+        aiConfig.enabled = chkEnabled.checked;
+        persistAiConfig();
+      });
+    }
+    if (inpKey) {
+      inpKey.value = aiConfig.apiKey || "";
+      inpKey.addEventListener("input", () => {
+        aiConfig.apiKey = inpKey.value.trim();
+        persistAiConfig();
+      });
+    }
+    if (chkRemember) {
+      chkRemember.checked = aiConfig.rememberKey !== false;
+      chkRemember.addEventListener("change", () => {
+        aiConfig.rememberKey = chkRemember.checked;
+        persistAiConfig();
+      });
+    }
+    if (btnVis && inpKey) {
+      btnVis.addEventListener("click", () => {
+        inpKey.type = inpKey.type === "password" ? "text" : "password";
+      });
+    }
+    if (btnClear && inpKey) {
+      btnClear.addEventListener("click", () => {
+        inpKey.value = "";
+        aiConfig = window.RabiAIVision.clearConfigKey();
+        if (verifyStatus) verifyStatus.textContent = "";
+        updateAiStatusUI();
+      });
+    }
+    if (btnVerify) {
+      btnVerify.addEventListener("click", async () => {
+        const key = String((inpKey && inpKey.value) || aiConfig.apiKey || "").trim();
+        if (!key) {
+          if (verifyStatus) verifyStatus.textContent = "Enter an API key first.";
+          return;
+        }
+        aiConfig.apiKey = key;
+        if (verifyStatus) verifyStatus.textContent = "Checking key & loading models...";
+        try {
+          const liveModels = await window.RabiAIVision.listAvailableModels(key);
+          aiConfig.discoveredModels = liveModels;
+          persistAiConfig();
+          renderAiModelsGrid();
+          if (verifyStatus) {
+            verifyStatus.textContent = `✅ Verified (${liveModels.length} Gemini models available)`;
+          }
+        } catch (err) {
+          if (verifyStatus) {
+            verifyStatus.textContent = `❌ ${err && err.message ? err.message : String(err)}`;
+          }
+        }
+      });
+    }
+    if (btnAddCustom && inpCustom) {
+      btnAddCustom.addEventListener("click", () => {
+        const mid = window.RabiAIVision.normalizeModelId(inpCustom.value);
+        if (!mid) return;
+        if (!aiConfig.customModels.includes(mid)) {
+          aiConfig.customModels.push(mid);
+        }
+        if (!aiConfig.selectedModels.includes(mid)) {
+          aiConfig.selectedModels.push(mid);
+        }
+        inpCustom.value = "";
+        persistAiConfig();
+        renderAiModelsGrid();
+      });
+    }
+
+    renderAiModelsGrid();
+    updateAiStatusUI();
+  }
+
   function init() {
     loadSurveyFromStorage();
     renderBenchmarkTable();
+    setupAiSettingsControls();
 
     // Navigation Tabs
     document.querySelectorAll(".nav-btn").forEach((btn) => {
@@ -594,6 +1050,9 @@
     document.getElementById("btn-add-survey").addEventListener("click", addCurrentScanToSurvey);
     document.getElementById("btn-goto-lab").addEventListener("click", () => {
       document.querySelector('.nav-btn[data-tab="tab-lab"]').click();
+    });
+    document.getElementById("btn-recheck-ai").addEventListener("click", () => {
+      if (currentScan) runAiInspectionForScan(currentScan);
     });
 
     document.getElementById("btn-demo-survey").addEventListener("click", () => {
@@ -670,10 +1129,10 @@
     }
 
     applyLanguage();
-    // Auto-load Wheat Yellow Rust sample so first open demonstrates capability immediately!
+    // Auto-load Wheat Yellow Rust sample offline on initial launch (do not burn API quota on page open).
     const samples = getBundle().samples;
     const defaultSample = samples.find((s) => s.id === "wheat_yellow_rust") || samples[0];
-    if (defaultSample) analyzeImageUrl(defaultSample.data_url);
+    if (defaultSample) analyzeImageUrl(defaultSample.data_url, { skipAi: true });
   }
 
   document.addEventListener("DOMContentLoaded", init);

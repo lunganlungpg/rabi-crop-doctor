@@ -18,10 +18,12 @@ import numpy as np
 
 try:
     from ._paths import resolve_asset_path
+    from .ai_vision import analyze_leaf_multi_model, list_available_models
     from .disease_incidence import severity_to_grade
     from .feature_extractor import extract_features_and_diagnostics
 except ImportError:
     from _paths import resolve_asset_path
+    from ai_vision import analyze_leaf_multi_model, list_available_models
     from disease_incidence import severity_to_grade
     from feature_extractor import extract_features_and_diagnostics
 
@@ -134,9 +136,18 @@ def _predict_svm_json(x_scaled: np.ndarray, svm_spec: Dict[str, Any], n_classes:
     return _multiclass_coupling(n_classes, pairwise)
 
 
-def predict_leaf_image(image_path: str, crop_filter: str | None = None) -> Dict[str, Any]:
+def predict_leaf_image(
+    image_path: str,
+    crop_filter: str | None = None,
+    *,
+    use_ai: bool = False,
+    api_key: str | None = None,
+    ai_models: List[str] | None = None,
+    ai_only: bool = False,
+) -> Dict[str, Any]:
     """
-    Classify a leaf image across all 4 ML & ANN models + Hybrid Ensemble.
+    Classify a leaf image using offline ML & ANN models and/or Google Gemini
+    multi-model Vision AI with automatic offline fallback.
 
     Parameters
     ----------
@@ -145,6 +156,14 @@ def predict_leaf_image(image_path: str, crop_filter: str | None = None) -> Dict[
     crop_filter : str | None
         Optional known crop ('wheat', 'mustard', 'chickpea', or 'potato')
         to restrict classification probabilities within that crop's diseases.
+    use_ai : bool
+        When True, verify the image and generate diagnosis/advisory via Gemini AI.
+    api_key : str | None
+        Optional Gemini API key (defaults to GEMINI_API_KEY env var).
+    ai_models : list of str | None
+        One or more Gemini model IDs to run in parallel for consensus results.
+    ai_only : bool
+        If True, fail instead of falling back to offline ML+ANN when AI fails.
     """
     pkl_path = resolve_asset_path("models", "trained_models.pkl")
     json_model_path = resolve_asset_path("models", "android_models.json")
@@ -153,12 +172,64 @@ def predict_leaf_image(image_path: str, crop_filter: str | None = None) -> Dict[
     with open(kb_path, "r", encoding="utf-8") as f:
         kb = json.load(f)
 
+    ai_outcome: Dict[str, Any] | None = None
+    ai_error: str | None = None
+    if use_ai:
+        try:
+            known_ids = [c["id"] for c in kb.get("classes", [])]
+            ai_outcome = analyze_leaf_multi_model(
+                image_path=image_path,
+                api_key=api_key,
+                models=ai_models,
+                crop_hint=crop_filter,
+                known_classes=known_ids,
+            )
+            if ai_outcome.get("consensus") is None:
+                errs = "; ".join(
+                    f"{r['model_id']}: {r.get('error', 'failed')}"
+                    for r in ai_outcome.get("results", [])
+                    if not r.get("ok")
+                )
+                ai_error = errs or "All selected AI models failed."
+        except Exception as exc:
+            ai_error = str(exc)
+
+    if ai_only and (ai_outcome is None or ai_outcome.get("consensus") is None):
+        raise RuntimeError(f"AI Vision check failed (--ai-only): {ai_error}")
+
+    if ai_outcome and ai_outcome.get("consensus"):
+        cons = ai_outcome["consensus"]
+        return {
+            "source": "gemini_ai_consensus",
+            "leaf_detected": bool(cons["is_plant_leaf"]),
+            "image": image_path,
+            "detected_crop": cons["detected_crop"],
+            "predicted_class": cons["canonical_class_id"],
+            "name_en": cons["diagnosis_en"],
+            "name_hi": cons["diagnosis_hi"],
+            "pathogen": cons["pathogen"],
+            "confidence_pct": cons["confidence_pct"],
+            "estimated_severity_pct": cons["estimated_severity_pct"],
+            "severity_grade": cons["severity_grade"],
+            "agreement": f"{cons['agreement_count']}/{cons['total_models_succeeded']}",
+            "symptoms_en": cons["symptoms_en"],
+            "symptoms_hi": cons["symptoms_hi"],
+            "reasoning_en": cons["reasoning_en"],
+            "advisory_en": cons["action_en"],
+            "advisory_hi": cons["action_hi"],
+            "ai_models": ai_outcome["results"],
+        }
+
     diag = extract_features_and_diagnostics(image_path)
     if not diag["leaf_detected"]:
-        return {
+        out: Dict[str, Any] = {
+            "source": "offline_ml_ann",
             "leaf_detected": False,
             "message": "Leaf not clearly detected. Center leaf in good daylight.",
         }
+        if ai_error:
+            out["ai_error"] = ai_error
+        return out
 
     per_model: Dict[str, np.ndarray] = {}
 
@@ -217,7 +288,8 @@ def predict_leaf_image(image_path: str, crop_filter: str | None = None) -> Dict[
     sev_pct = 0.0 if is_healthy else diag["estimated_severity_pct"]
     grade = 0 if is_healthy else severity_to_grade(sev_pct)
 
-    return {
+    result_payload = {
+        "source": "offline_ml_ann",
         "leaf_detected": True,
         "image": image_path,
         "predicted_class": best_class,
@@ -229,21 +301,66 @@ def predict_leaf_image(image_path: str, crop_filter: str | None = None) -> Dict[
         "model_breakdown": model_breakdown,
         "advisory_en": cls_info.get("action_en", []),
     }
+    if ai_error:
+        result_payload["ai_fallback_reason"] = ai_error
+    return result_payload
 
 
 def cli_main() -> None:
     """Entrypoint for the installed `rabi-doctor` CLI console script."""
     parser = argparse.ArgumentParser(
-        description="Classify a Rabi crop leaf photo using trained ML & ANN models."
+        description="Classify a Rabi crop leaf photo using Gemini AI Vision and/or offline ML & ANN models."
     )
-    parser.add_argument("image", help="Path to leaf image (.png/.jpg/.webp)")
+    parser.add_argument("image", nargs="?", default=None, help="Path to leaf image (.png/.jpg/.webp)")
     parser.add_argument(
         "--crop",
         default=None,
         help="Optional crop filter: wheat, mustard, chickpea, potato",
     )
+    parser.add_argument(
+        "--ai",
+        action="store_true",
+        help="Verify photo and diagnose via Google Gemini Vision API (falls back to offline unless --ai-only).",
+    )
+    parser.add_argument(
+        "--ai-models",
+        nargs="+",
+        default=None,
+        help="One or more Gemini model IDs (e.g. --ai-models gemini-2.5-flash gemini-2.5-pro).",
+    )
+    parser.add_argument(
+        "--api-key",
+        default=None,
+        help="Gemini API key (defaults to GEMINI_API_KEY environment variable).",
+    )
+    parser.add_argument(
+        "--ai-only",
+        action="store_true",
+        help="Require Gemini AI response and fail instead of falling back to offline ML+ANN.",
+    )
+    parser.add_argument(
+        "--list-ai-models",
+        action="store_true",
+        help="List Gemini models available for the supplied API key and exit.",
+    )
     args = parser.parse_args()
-    res = predict_leaf_image(args.image, crop_filter=args.crop)
+
+    if args.list_ai_models:
+        key = args.api_key or os.environ.get("GEMINI_API_KEY") or ""
+        print(json.dumps(list_available_models(key), indent=2, ensure_ascii=False))
+        return
+
+    if not args.image:
+        parser.error("image path is required unless --list-ai-models is specified")
+
+    res = predict_leaf_image(
+        args.image,
+        crop_filter=args.crop,
+        use_ai=args.ai,
+        api_key=args.api_key,
+        ai_models=args.ai_models,
+        ai_only=args.ai_only,
+    )
     print(json.dumps(res, indent=2, ensure_ascii=False))
 
 

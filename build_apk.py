@@ -17,7 +17,22 @@ GEN_DIR = os.path.join(BUILD_DIR, "gen")
 OBJ_DIR = os.path.join(BUILD_DIR, "obj")
 DEX_DIR = os.path.join(BUILD_DIR, "dex")
 
-JDK_DIR = os.path.join(APP1_DIR, "jdk-17", "jdk-17.0.12+7")
+def _resolve_jdk_dir():
+    candidates = [
+        os.environ.get("JAVA_HOME", ""),
+        os.path.join(APP1_DIR, "jdk-17", "jdk-17.0.12+7"),
+        r"C:\Users\lungh\.p2\pool\plugins\org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_21.0.10.v20260205-0638\jre",
+    ]
+    for cand in candidates:
+        if cand and os.path.exists(os.path.join(cand, "bin", "javac.exe")):
+            return cand
+    javac = shutil.which("javac")
+    if javac:
+        return os.path.dirname(os.path.dirname(javac))
+    return candidates[1]
+
+
+JDK_DIR = _resolve_jdk_dir()
 JDK_BIN = os.path.join(JDK_DIR, "bin")
 SDK_DIR = r"C:\Users\lungh\AppData\Local\Android\Sdk"
 BUILD_TOOLS = os.path.join(SDK_DIR, "build-tools", "35.0.1")

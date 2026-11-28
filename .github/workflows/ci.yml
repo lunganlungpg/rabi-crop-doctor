@@ -44,6 +44,7 @@ jobs:
           python python/train_and_evaluate.py
           python tests/test_parity_and_pipeline.py
           python tests/test_rabi_timeline_and_kaggle.py
+          python tests/test_ai_vision.py
 
   verify-r-package:
     runs-on: ubuntu-latest

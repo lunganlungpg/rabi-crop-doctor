@@ -28,7 +28,7 @@ Smallholder farmers rarely have reliable rural internet connectivity or paid dia
 
 ## 📱 Key Features for Farmers (Android APK)
 
-1. **100% Free & Offline Operation:** Runs completely inside the Android APK (`android_build/` -> `RabiCropDoctor.apk`, minSdk 21 / Android 5.0+ through Android 15) with zero subscriptions, zero ads, and no mobile data required.
+1. **Hybrid Offline + Bring-Your-Own-Key Gemini AI Vision:** Runs 100% offline inside the Android APK (`android_build/` -> `RabiCropDoctor.apk`, minSdk 21 / Android 5.0+ through Android 15) **and** lets users optionally paste their own **Google Gemini API key** on-device, verify/load live Gemini models, and select one or multiple AI models (`Flash`, `Flash-Lite`, `Pro`, or custom IDs) for multi-model vision diagnosis and bilingual advice with automatic offline fallback.
 2. **Native Camera & Gallery Integration:** Supports direct camera capture with automatic EXIF orientation correction, Android Gallery photo selection, and 12 offline demo leaf presets.
 3. **AI Lesion Heatmap & Severity Grading (0–5):** Automatically segments the leaf blade from soil/sky backdrops, highlights chlorosis, yellow rust stripes, white blisters, and blight necrosis in an instant side-by-side map, and estimates foliar lesion percentage.
 4. **Plot-Level Disease Incidence (%) & Wheeler PDI Audit:** Add inspected field leaves across a W-pattern survey to calculate:
@@ -136,6 +136,9 @@ Full install guides, container details, and dependency tables live in [**`PACKAG
   ```bash
   pip install "git+https://github.com/lunganlungpg/rabi-crop-doctor.git"
   rabi-doctor dataset_samples/wheat_yellow_rust_sample_1.png --crop wheat
+
+  # Optional multi-model Gemini AI Vision check (uses GEMINI_API_KEY, falls back offline if unset):
+  rabi-doctor kaggle_samples/wheat_yellow_rust.jpg --crop wheat --ai --ai-models gemini-2.5-flash gemini-2.5-pro
   ```
 - **📊 R Companion Package (`rabidoctor`, zero external CRAN dependencies):**
   ```r

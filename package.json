@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "test": "node -e \"const pkg = require('./index.js'); console.log('Classes:', pkg.getClasses().length, 'Features:', pkg.FEATURE_NAMES.length)\"",
-    "check": "node --check index.js && node --check web/js/feature_extractor.js && node --check web/js/inference_engine.js && node --check web/js/app.js"
+    "check": "node --check index.js && node --check web/js/feature_extractor.js && node --check web/js/inference_engine.js && node --check web/js/ai_vision.js && node --check web/js/app.js"
   },
   "repository": {
     "type": "git",

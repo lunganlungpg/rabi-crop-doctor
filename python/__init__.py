@@ -19,6 +19,7 @@ Public API
 
 from __future__ import annotations
 
+from .ai_vision import analyze_leaf_multi_model, list_available_models
 from .disease_incidence import (
     compute_field_survey_metrics,
     severity_to_grade,
@@ -36,8 +37,10 @@ __all__ = [
     "__version__",
     "CLASSES",
     "FEATURE_NAMES",
+    "analyze_leaf_multi_model",
     "compute_field_survey_metrics",
     "extract_features_and_diagnostics",
+    "list_available_models",
     "predict_leaf_image",
     "resolve_rabi_timeline",
     "severity_to_grade",

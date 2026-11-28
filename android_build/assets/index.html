@@ -64,6 +64,55 @@
         </div>
       </div>
 
+      <!-- Optional Gemini AI Vision Settings Card -->
+      <div class="card ai-card" id="ai-settings-card">
+        <div class="ai-header-row">
+          <div class="section-title" style="margin: 0;" id="lbl-ai-title">🤖 Gemini AI Vision Check (Optional)</div>
+          <span class="pill-tag pill-safe" id="ai-status-pill">Offline ML+ANN</span>
+        </div>
+        <label class="ai-toggle-row" for="chk-ai-enabled">
+          <input type="checkbox" id="chk-ai-enabled" checked />
+          <span id="lbl-ai-enable">Verify photo &amp; diagnose via Gemini AI API (auto offline fallback)</span>
+        </label>
+        <details id="ai-settings-details" style="margin-top: 8px;">
+          <summary class="ai-summary-btn" id="lbl-ai-summary">⚙️ API Key &amp; Multi-Model Selection</summary>
+          <div class="ai-settings-body">
+            <label class="ai-field-label" for="input-ai-key" id="lbl-ai-key">
+              Your Gemini API Key (stored only on this device):
+            </label>
+            <div class="ai-key-row">
+              <input type="password" id="input-ai-key" class="ai-input" placeholder="AIza..." autocomplete="off" />
+              <button type="button" class="btn-mini" id="btn-toggle-key-vis" title="Show/Hide Key">👁️</button>
+              <button type="button" class="btn-mini btn-mini-danger" id="btn-clear-ai-key" title="Clear Key">Clear</button>
+            </div>
+            <div class="ai-key-meta">
+              <label class="ai-remember-lbl" for="chk-ai-remember">
+                <input type="checkbox" id="chk-ai-remember" checked />
+                <span id="lbl-ai-remember">Remember key on this device</span>
+              </label>
+              <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="ai-link">Get Gemini API Key ↗</a>
+            </div>
+
+            <div class="ai-verify-row">
+              <button type="button" class="btn btn-outline" id="btn-ai-verify" style="padding: 8px 12px; font-size: 0.8rem;">
+                🔄 Verify Key &amp; Load Live Models
+              </button>
+              <span class="muted" id="ai-verify-status" style="font-size: 0.78rem;"></span>
+            </div>
+
+            <div class="ai-field-label" style="margin-top: 10px;" id="lbl-ai-models">
+              Select 1 or more AI models (multi-model consensus):
+            </div>
+            <div class="ai-models-grid" id="ai-models-list"></div>
+
+            <div class="ai-custom-row">
+              <input type="text" id="input-custom-model" class="ai-input" placeholder="Custom model ID (e.g. gemini-3.8-flash)" />
+              <button type="button" class="btn-mini" id="btn-add-custom-model">+ Add</button>
+            </div>
+          </div>
+        </details>
+      </div>
+
       <!-- Quality Warning -->
       <div class="card hidden" id="card-no-leaf" style="border-color: #f59e0b; background: #fffbeb;">
         <h3 style="margin:0 0 6px; color:#92400e;" id="lbl-noleaf-title">Leaf Not Clearly Detected</h3>
@@ -74,6 +123,9 @@
 
       <!-- Result Card -->
       <div class="card hidden" id="card-result">
+        <div class="ai-loading hidden" id="ai-loading-bar">
+          ⏳ Checking image through selected Gemini AI model(s)...
+        </div>
         <div class="preview-split">
           <div class="img-box">
             <img id="img-input-preview" alt="Captured leaf" />
@@ -92,6 +144,9 @@
         </div>
 
         <div id="diag-banner" class="diag-banner" style="margin-top: 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:4px;">
+            <span class="pill-tag pill-safe" id="badge-diag-source">Offline ML + ANN</span>
+          </div>
           <div class="diag-title" id="diag-name">—</div>
           <div class="muted" id="diag-pathogen" style="font-style: italic;">—</div>
           <div class="badge-row">
@@ -100,6 +155,8 @@
             <span class="badge" id="badge-grade">Grade: —</span>
           </div>
           <div style="font-size: 0.85rem; margin-top: 6px;" id="diag-symptoms">—</div>
+          <div class="ai-reasoning hidden" id="diag-ai-reasoning"></div>
+          <div class="ai-error-box hidden" id="ai-error-box"></div>
         </div>
 
         <div style="margin-bottom: 10px;">
@@ -115,8 +172,11 @@
 
         <div class="action-row" style="margin-top: 14px;">
           <button class="btn btn-primary" id="btn-add-survey" type="button">➕ Add to Field Survey</button>
-          <button class="btn btn-outline" id="btn-goto-lab" type="button">🔬 View ML vs ANN</button>
+          <button class="btn btn-outline" id="btn-goto-lab" type="button">🔬 View AI &amp; Models</button>
         </div>
+        <button class="btn btn-outline hidden" id="btn-recheck-ai" type="button" style="width:100%; margin-top:8px;">
+          🤖 Re-check Current Photo with Gemini AI
+        </button>
 
         <div class="helpline-box" id="box-helpline"></div>
       </div>
@@ -173,8 +233,16 @@
       </div>
     </section>
 
-    <!-- TAB 3: ML vs ANN MODEL LAB -->
+    <!-- TAB 3: AI & ML vs ANN MODEL LAB -->
     <section id="tab-lab" class="tab-panel">
+      <div class="card hidden" id="card-ai-lab">
+        <h2 class="section-title" id="lbl-ai-lab-title">🤖 Cloud Gemini AI Vision Model Comparison</h2>
+        <p class="muted" id="lbl-ai-lab-sub">
+          Live per-model responses from the Gemini models you selected for the current leaf image.
+        </p>
+        <div id="ai-model-bars"></div>
+      </div>
+
       <div class="card">
         <h2 class="section-title" id="lbl-lab-live">Live On-Device Model Comparison (Current Leaf)</h2>
         <p class="muted" id="lbl-lab-sub">
@@ -261,6 +329,7 @@
   <script src="js/feature_extractor.js"></script>
   <script src="js/inference_engine.js"></script>
   <script src="js/models_data.js"></script>
+  <script src="js/ai_vision.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

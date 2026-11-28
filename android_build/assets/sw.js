@@ -1,4 +1,4 @@
-const CACHE_NAME = "rabi-crop-doctor-v1";
+const CACHE_NAME = "rabi-crop-doctor-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const ASSETS = [
   "./js/feature_extractor.js",
   "./js/inference_engine.js",
   "./js/models_data.js",
+  "./js/ai_vision.js",
   "./js/app.js"
 ];
 
@@ -27,6 +28,9 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then((cached) => cached || fetch(event.request))
   );
