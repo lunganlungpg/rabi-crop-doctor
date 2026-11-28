@@ -52,12 +52,15 @@ jobs:
       - name: Train and evaluate
         env:
           PYTHONPATH: python
+          CROPS: ${{ inputs.crops }}
+          CV_FOLDS: ${{ inputs.cv_folds }}
         run: |
-          ARGS="--dataset-dir data/kaggle_20k_crop_disease_images --output-dir models/kaggle_20k --cv-folds ${{ inputs.cv_folds }}"
-          if [ -n "${{ inputs.crops }}" ]; then
-            python python/train_kaggle_dataset.py --dataset-dir data/kaggle_20k_crop_disease_images --output-dir models/kaggle_20k --cv-folds "${{ inputs.cv_folds }}" --crops ${{ inputs.crops }}
+          BASE_ARGS=(--dataset-dir data/kaggle_20k_crop_disease_images --output-dir models/kaggle_20k --cv-folds "$CV_FOLDS")
+          if [ -n "$CROPS" ]; then
+            read -r -a CROP_ARGS <<< "$CROPS"
+            python python/train_kaggle_dataset.py "${BASE_ARGS[@]}" --crops "${CROP_ARGS[@]}"
           else
-            python python/train_kaggle_dataset.py $ARGS
+            python python/train_kaggle_dataset.py "${BASE_ARGS[@]}"
           fi
 
       - name: Upload trained models and evaluation
